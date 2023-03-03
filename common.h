@@ -48,7 +48,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 typedef enum {
     TMC2209 = 0,
     TMC2130,
-    TMC5160
+    TMC5160,
+    TMC2660
 } trinamic_driver_t;
 
 typedef enum {
