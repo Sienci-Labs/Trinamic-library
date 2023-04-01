@@ -180,24 +180,44 @@ bool TMC2660_Init (TMC2660_t *driver)
     if(driver->drv_status.reg.value == 0 || driver->drv_status.reg.value == 0xFFFFFFFF)
         return false;*/
 
+    //CHOPCONF
+    //098511 is good alternate
+
     gram.addr.value = 0x09;
-    gram.payload.value = 0x01B4;
+    //gram.payload.value = 0x01B4;
+    //working standard?
+    //gram.payload.value = 0x2081;
+    //standard?
+    //gram.payload.value = 0x4557;
+    gram.payload.value = 0x0181;
     tmc_spi_write(driver->config.motor, (TMC_spi_datagram_t *)&gram);
 
+    //SGCSCONF
     gram.addr.value = 0x0D;
-    gram.payload.value = 0x0214;
+    //gram.payload.value = 0x0015; //1.4A current 2 stallguard
+    gram.payload.value = 0x001F; //3.1A current 2 stallguard
     tmc_spi_write(driver->config.motor, (TMC_spi_datagram_t *)&gram);
 
+    //DRVCONF
+    //low driver strength, StallGuard2 read, SDOFF=0
     gram.addr.value = 0x0E;
-    gram.payload.value = 0x0010;
+    gram.payload.value = 0x0F10;
     tmc_spi_write(driver->config.motor, (TMC_spi_datagram_t *)&gram);
 
-    gram.addr.value = 0x00;
-    gram.payload.value = 0x0205;
+    //DRVCTRL
+    //8 microsteps and disable interpolation
+    gram.addr.value = 0x0003;
+    gram.payload.value = 0x0005;
     tmc_spi_write(driver->config.motor, (TMC_spi_datagram_t *)&gram);
 
+    //SMARTEN
+    
     gram.addr.value = 0x0A;
-    gram.payload.value = 0x8202;
+    //gram.payload.value = 0x0000;
+    // Enable CoolStep with minimum current 1/2 CS?
+    //gram.payload.value = 0x8202;
+    //gram.payload.value = 0x6062; //so far like this one.
+    gram.payload.value = 0x6061;
     tmc_spi_write(driver->config.motor, (TMC_spi_datagram_t *)&gram);  
 
     #if 0
