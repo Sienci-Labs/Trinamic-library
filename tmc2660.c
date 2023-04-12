@@ -184,18 +184,15 @@ bool TMC2660_Init (TMC2660_t *driver)
     //098511 is good alternate
 
     gram.addr.value = 0x09;
-    //gram.payload.value = 0x01B4;
-    //working standard?
-    //gram.payload.value = 0x2081;
-    //standard?
-    //gram.payload.value = 0x4557;
-    gram.payload.value = 0x0181;
+    //gram.payload.value = 0x0181;  //most efficient (0x09 addr)
+    gram.payload.value = 0x2321;  //most efficient (0x09 addr) rndtf=1
+    //gram.payload.value = 0x2181;  //most efficient (0x09 addr) rndtf=1
     tmc_spi_write(driver->config.motor, (TMC_spi_datagram_t *)&gram);
 
     //SGCSCONF
     gram.addr.value = 0x0D;
-    //gram.payload.value = 0x0015; //1.4A current 2 stallguard
-    gram.payload.value = 0x001F; //3.1A current 2 stallguard
+    //gram.payload.value = 0x0219; //1.4A current 2 stallguard
+    gram.payload.value = 0x021F; //3.1A current 2 stallguard
     tmc_spi_write(driver->config.motor, (TMC_spi_datagram_t *)&gram);
 
     //DRVCONF
