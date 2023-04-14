@@ -392,7 +392,7 @@ const tmchal_t *TMC2660_AddMotor (motor_map_t motor, uint16_t current, uint8_t m
         tmcdriver[motor.id]->config.current = current;
         tmcdriver[motor.id]->config.microsteps = microsteps;
         tmcdriver[motor.id]->config.r_sense = r_sense;
-        tmcdriver[motor.id]->chopconf.reg.mres = tmc_microsteps_to_mres(microsteps);
+        tmcdriver[motor.id]->drvctrl.reg.mres = tmc_microsteps_to_mres(microsteps);
     }
 
     if(ok && !(ok = TMC2660_Init(tmcdriver[motor.id]))) {

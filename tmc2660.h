@@ -60,47 +60,37 @@ typedef enum {
 // default values
 
 // General
-#define TMC2660_F_CLK               12000000UL  // factory tuned to 12MHz - see datasheet for calibration procedure if required
-#define TMC2660_MODE                3           // 0 = TMCMode_StealthChop - not supported on 2660, 1 = TMCMode_CoolStep, 3 = TMCMode_StallGuard
+#define TMC2660_F_CLK               15000000UL  // factory tuned to 12MHz - see datasheet for calibration procedure if required
+#define TMC2660_MODE                1           // 0 = TMCMode_StealthChop - not supported on 2660, 1 = TMCMode_CoolStep, 3 = TMCMode_StallGuard
 #define TMC2660_MICROSTEPS          TMC2660_Microsteps_4
 #define TMC2660_R_SENSE             100          // mOhm
 #define TMC2660_CURRENT             1500         // mA RMS
-#define TMC2660_HOLD_CURRENT_PCT    50
+#define TMC2660_HOLD_CURRENT_PCT    10  //holding current percent
 
 // CHOPCONF
-#define TMC2660_INTERPOLATE         1   // intpol: 0 = off, 1 = on
 #define TMC2660_CONSTANT_OFF_TIME   5   // toff: 1 - 15
-#define TMC2660_BLANK_TIME          1   // tbl: 0 = 16, 1 = 24, 2 = 36, 3 = 54 clocks
-#define TMC2660_CHOPPER_MODE        0   // chm: 0 = spreadCycle, 1 = constant off time
-// TMC2660_CHOPPER_MODE 0 defaults
-#define TMC2660_HSTRT               3   // hstrt: 0 - 7
+#define TMC2660_BLANK_TIME          0   // tbl: 0 = 16, 1 = 24, 2 = 36, 3 = 54 clocks
+#define TMC2660_CHOPPER_MODE        0   // chm: 0 = spreadCycle, 1 = constant off time  Do not use constant off
+#define TMC2660_HSTR                3   // hstr: 0 - 7
 #define TMC2660_HEND                2   // hend: -3 - 12
-// TMC2660_CHOPPER_MODE 1 defaults
-#define TMC2130_TFD                 13  // fd3 & hstrt: 0 - 15
+#define TMC2660_HDEC                0   // Hysteresis decrement: 0 16 clocks
+#define TMC2660_RNDTF               0  // Random off time
 
-// IHOLD_IRUN
-//#define TMC2660_IHOLDDELAY          6  // this is not supported.
+//SGCSCONF
+#define TMC2660_CURRENT_SCALE       15   // current scale default (conservative)
+#define TMC2660_SG_THRESH           0   // Stallguard threshold
+#define TMC2660_SG_FILTER           0   // Enable Stallguard Filter
 
-// TPOWERDOWN
-//#define TMC2660_TPOWERDOWN          128 // 0 - ((2^8)-1) * 2^18 tCLK  //don't think this is supported.
+//DRVCONF
+#define TMC2660_DRVCONF             0x0F10   // DRVCONF Register defaults (likely don't need to change)
 
-// TPWMTHRS
-//#define TMC2660_TPWM_THRS           0   // tpwmthrs: 0 - 2^20 - 1 (20 bits) //don't think this is supported.
+//DRVCTRL
+#define TMC2660_MRES                TMC2660_MICROSTEPS
+#define TMC2660_DEDGE               0           //double edge step pulses
+#define TMC2660_INTPOL              0          //step interpolation
 
-// PWMCONF - StealthChop defaults - not supported.
-/*#define TMC2660_PWM_FREQ            1   // 0 = 1/1024, 1 = 2/683, 2 = 2/512, 3 = 2/410 fCLK
-#define TMC2660_PWM_AUTOGRAD        1   // boolean (0 or 1)
-#define TMC2660_PWM_GRAD            14  // 0 - 255
-#define TMC2660_PWM_LIM             12  // 0 - 15
-#define TMC2660_PWM_REG             8   // 1 - 15
-#define TMC2660_PWM_OFS             36  // 0 - 255
-
-// TCOOLTHRS
-#define TMC2660_COOLSTEP_THRS       TMC_THRESHOLD_MIN   // tpwmthrs: 0 - 2^20 - 1 (20 bits)
-*/
-
-// COOLCONF - CoolStep defaults
-#define TMC2660_SEMIN               5   // 0 = coolStep off, 1 - 15 = coolStep on
+//SMARTEN
+#define TMC2660_SEMIN               0   // 0 = 1/2 of CS, 1 = 1/4 of CS
 #define TMC2660_SEUP                0   // 0 - 3 (1 - 8)
 #define TMC2660_SEMAX               2   // 0 - 15
 #define TMC2660_SEDN                1   // 0 - 3
@@ -108,23 +98,12 @@ typedef enum {
 
 // end of default values
 
-//#if TMC2660_MODE == 0   // StealthChop
-//#define TMC2660_PWM_AUTOSCALE 1
-//#define TMC2660_EN_PWM_MODE   1
-#if TMC2660_MODE == 1 // CoolStep
-#define TMC2660_PWM_AUTOSCALE 0
-#define TMC2660_EN_PWM_MODE   0
-#else                   //StallGuard
-#define TMC2660_PWM_AUTOSCALE 0
-#define TMC2660_EN_PWM_MODE   0
-#endif
-
 typedef uint8_t tmc2660_regaddr_t;
 
 
 //adresses are 3 bits.
 enum tmc2660_regaddr_t {
-    TMC2660Reg_DRVCTR           = 0x0, //only ever going to use step/dir mode.
+    TMC2660Reg_DRVCTRL           = 0x0, //only ever going to use step/dir mode.
     TMC2660Reg_CHOPCONF         = 0x1,
     TMC2660Reg_SMARTEN          = 0x5, //Coolstep control register.
     TMC2660Reg_DRVCONF          = 0x7, //Driver Control Register.
@@ -153,14 +132,11 @@ typedef union {
     uint32_t value;
     struct {
         uint32_t
-        mres0           :1,
-        mres1           :1,
-        mres2           :1,
-        mres3           :1,
+        mres            :4,
         reserved1       :4,
         dedge           :1,
         intpol          :1,
-        reserved2       :7,//only count 7 reserved bits for 17 in total.
+        reserved2       :7//only count 7 reserved bits for 17 in total.
     };
 } TMC2660_drvctrl_reg_t;
 
@@ -169,23 +145,13 @@ typedef union {
     uint32_t value;
     struct {
         uint32_t
-        toff0           :1,
-        toff1           :1,
-        toff2           :1,
-        toff3           :1,
-        hstrt0          :1,
-        hstrt1          :1,
-        hstrt2          :1,
-        hend0           :1,  
-        hend1           :1,
-        hend2           :1,  
-        hend3           :1,
-        hdec0           :1,  
-        hdec1           :1, 
+        toff            :4,
+        hstrt           :3,
+        hend            :4,  
+        hdec            :2,  
         rndtf           :1,
         chm             :1,
-        tbl0            :1,
-        tbl1            :1,                                       
+        tbl             :2                                   
     };
 } TMC2660_chopconf_reg_t;  //17 bits is complete register.
 
@@ -194,23 +160,15 @@ typedef union {
     uint32_t value;
     struct {
         uint32_t
-        semin0          :1, 
-        semin1          :1,
-        semin2          :1,   
-        semin3          :1, 
+        semin           :4, 
         reserved1       :1,  
-        seup0           :1,
-        seup1           :1, 
+        seup            :2,
         reserved2       :1,   
-        semax0          :1,                                                          
-        semax1          :1,      
-        semax2          :1,      
-        semax3          :1,  
+        semax           :4,                                                          
         reserved3       :1, 
-        sedn0           :1,  
-        sedn1           :1,    
+        sedn            :2,    
         seimin          :1,  
-        reserved4       :1,                                                                                                   
+        reserved4       :1                                                                                                   
     };
 } TMC2660_smarten_reg_t;  //17 bits is complete register.
 
@@ -219,21 +177,11 @@ typedef union {
     uint32_t value;
     struct {
         uint32_t
-        cs0             :1, 
-        cs1             :1,
-        cs2             :1,   
-        cs3             :1,
-        cs4             :1,          
+        cs              :5,          
         reserved1       :3,  
-        sgt0            :1,
-        sgt1            :1,
-        sgt2            :1,
-        sgt3            :1,
-        sgt4            :1,
-        sgt5            :1, 
-        sgt6            :1,  
+        sgt             :7,
         reserved2       :1,    
-        sfilt           :1,                                                                                                                                                              
+        sfilt           :1                                                                                                                                                              
     };
 } TMC2660_sgcsconf_reg_t;  //17 bits is complete register.
 
@@ -246,19 +194,15 @@ typedef union {
         en_pfd          :1,
         shrtsens        :1,   
         otsens          :1,
-        rdsel0          :1, 
-        rdsel1          :1,
+        rdsel           :2, 
         vsense          :1, 
         sdoff           :1,   
-        ts2g0           :1,
-        ts2g1           :1,
+        ts2g            :2,
         diss2g          :1,
         reserved1       :1, 
-        slpl0           :1,
-        slpl1           :1,   
-        slph0           :1,
-        slph1           :1,    
-        tst             :1,                                                                                                                                                                                                                             
+        slpl            :2,  
+        slph            :2,  
+        tst             :1                                                                                                                                                                                                                             
     };
 } TMC2660_drvconf_reg_t;  //17 bits is complete register.
 
@@ -277,21 +221,12 @@ typedef union {
         olb        :1, 
         stst       :1,  //standstill indicator.
         chip_rev   :2,  
-        sg_90      :10,                                     
+        sg_90      :10 //can also be mstep for phase info.                                    
     };
 } TMC2660_drvstatus_reg_t;
 
 // --- end of register definitions ---
 
-typedef union {
-    tmc2660_regaddr_t reg;
-    uint8_t value;
-    struct {
-        uint8_t
-        idx   :3,
-        write :1;
-    };
-} TMC2660_addr_t;
 
 // --- datagrams ---
 
@@ -329,7 +264,7 @@ typedef struct {
 
 typedef union {
     uint32_t value;
-    uint8_t data[4];
+    uint8_t data[3];
     TMC2660_drvctrl_reg_t drvctrl;
     TMC2660_chopconf_reg_t chopconf;
     TMC2660_smarten_reg_t smarten;
@@ -351,9 +286,9 @@ typedef struct {
     TMC2660_sgcsconf_dgr_t sgcsconf;
     TMC2660_drvconf_dgr_t drvconf;
     TMC2660_drvstatus_dgr_t drvstatus;
-
+    //status reg
     TMC2660_status_t driver_status;
-
+    //common config
     trinamic_config_t config;
 } TMC2660_t;
 

@@ -43,7 +43,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 #include <string.h>
-
+#include <math.h>
 #include "tmc2660.h"
 
 static const TMC2660_t tmc2660_defaults = {
@@ -55,131 +55,60 @@ static const TMC2660_t tmc2660_defaults = {
     .config.microsteps = TMC2660_MICROSTEPS,
 
     // register adresses
-    .gconf.addr.reg = TMC2660Reg_GCONF,
-    .gconf.reg.en_pwm_mode = TMC2660_EN_PWM_MODE,
-    .gstat.addr.reg = TMC2660Reg_GSTAT,
-    .ioin.addr.reg = TMC2660Reg_IOIN,
-    .global_scaler.addr.reg = TMC2660Reg_GLOBAL_SCALER,
-    .ihold_irun.addr.reg = TMC2660Reg_IHOLD_IRUN,
-    .ihold_irun.reg.iholddelay = TMC2660_IHOLDDELAY,
-    .tpowerdown.addr.reg = TMC2660Reg_TPOWERDOWN,
-    .tpowerdown.reg.tpowerdown = TMC2660_TPOWERDOWN,
-    .tstep.addr.reg = TMC2660Reg_TSTEP,
-    .tpwmthrs.addr.reg = TMC2660Reg_TPWMTHRS,
-    .tpwmthrs.reg.tpwmthrs = TMC2660_TPWM_THRS,
-    .tcoolthrs.addr.reg = TMC2660Reg_TCOOLTHRS,
-    .tcoolthrs.reg.tcoolthrs = TMC2660_COOLSTEP_THRS,
-    .thigh.addr.reg = TMC2660Reg_THIGH,
-    .vdcmin.addr.reg = TMC2660Reg_VDCMIN,
-    .mscnt.addr.reg = TMC2660Reg_MSCNT,
-    .mscuract.addr.reg = TMC2660Reg_MSCURACT,
+    .drvctrl.addr.reg = TMC2660Reg_DRVCTRL,
+    .drvctrl.reg.dedge = TMC2660_DEDGE,
+    .drvctrl.reg.intpol = TMC2660_INTPOL,
+    .drvctrl.reg.mres = TMC2660_MRES,
+
     .chopconf.addr.reg = TMC2660Reg_CHOPCONF,
-    .chopconf.reg.intpol = TMC2660_INTERPOLATE,
     .chopconf.reg.toff = TMC2660_CONSTANT_OFF_TIME,
     .chopconf.reg.chm = TMC2660_CHOPPER_MODE,
     .chopconf.reg.tbl = TMC2660_BLANK_TIME,
+    .chopconf.reg.hstrt = TMC2660_HSTR,
     .chopconf.reg.hend = TMC2660_HEND,
-#if TMC2660_CHOPPER_MODE == 0
-    .chopconf.reg.hstrt = TMC2660_HSTRT,
-#else
-    .chopconf.reg.fd3 = (TMC2130_TFD & 0x08) >> 3,
-    .chopconf.reg.hstrt = TMC2130_TFD & 0x07,
-#endif
-    .coolconf.addr.reg = TMC2660Reg_COOLCONF,
-    .coolconf.reg.semin = TMC2660_SEMIN,
-    .coolconf.reg.seup = TMC2660_SEUP,
-    .coolconf.reg.semax = TMC2660_SEMAX,
-    .coolconf.reg.sedn = TMC2660_SEDN,
-    .coolconf.reg.seimin = TMC2660_SEIMIN,
-    .dcctrl.addr.reg = TMC2660Reg_DCCTRL,
-    .drv_status.addr.reg = TMC2660Reg_DRV_STATUS,
-    .pwmconf.addr.reg = TMC2660Reg_PWMCONF,
-    .pwmconf.reg.pwm_autoscale = TMC2660_PWM_AUTOSCALE,
-    .pwmconf.reg.pwm_lim = TMC2660_PWM_LIM,
-    .pwmconf.reg.pwm_reg = TMC2660_PWM_REG,
-    .pwmconf.reg.pwm_autograd = TMC2660_PWM_AUTOGRAD,
-    .pwmconf.reg.pwm_freq = TMC2660_PWM_FREQ,
-    .pwmconf.reg.pwm_grad = TMC2660_PWM_GRAD,
-    .pwmconf.reg.pwm_ofs = TMC2660_PWM_OFS,
-    .pwm_scale.addr.reg = TMC2660Reg_PWM_SCALE,
-    .lost_steps.addr.reg = TMC2660Reg_LOST_STEPS,
-#ifdef TMC2660_COMPLETE
-    .xdirect.addr.reg = TMC2660Reg_XDIRECT,
-    .mslut[0].addr.reg = TMC2660Reg_MSLUT_BASE,
-    .mslut[1].addr.reg = (tmc2660_regaddr_t)(TMC2660Reg_MSLUT_BASE + 1),
-    .mslut[2].addr.reg = (tmc2660_regaddr_t)(TMC2660Reg_MSLUT_BASE + 2),
-    .mslut[3].addr.reg = (tmc2660_regaddr_t)(TMC2660Reg_MSLUT_BASE + 3),
-    .mslut[4].addr.reg = (tmc2660_regaddr_t)(TMC2660Reg_MSLUT_BASE + 4),
-    .mslut[5].addr.reg = (tmc2660_regaddr_t)(TMC2660Reg_MSLUT_BASE + 5),
-    .mslut[6].addr.reg = (tmc2660_regaddr_t)(TMC2660Reg_MSLUT_BASE + 6),
-    .mslut[7].addr.reg = (tmc2660_regaddr_t)(TMC2660Reg_MSLUT_BASE + 7),
-    .mslutsel.addr.reg = TMC2660Reg_MSLUTSEL,
-    .mslutstart.addr.reg = TMC2660Reg_MSLUTSTART,
-    .encm_ctrl.addr.reg = TMC2660Reg_ENCM_CTRL,
-#endif
+    .chopconf.reg.hdec = TMC2660_HDEC,
+    .chopconf.reg.rndtf = TMC2660_RNDTF,
 
+    .sgcsconf.addr.reg = TMC2660Reg_SGCSCONF,
+    .sgcsconf.reg.cs = TMC2660_CURRENT_SCALE,
+    .sgcsconf.reg.sfilt = TMC2660_SG_FILTER,
+    .sgcsconf.reg.sgt = TMC2660_SG_THRESH,
 
+    .drvconf.addr.reg = TMC2660Reg_DRVCONF,
+    .drvconf.reg.value = TMC2660_DRVCONF,
+
+    .smarten.addr.reg = TMC2660Reg_SMARTEN,
+    .smarten.reg.sedn = TMC2660_SEDN,
+    .smarten.reg.seimin = TMC2660_SEIMIN,
+    .smarten.reg.semax = TMC2660_SEMAX,
+    .smarten.reg.seup = TMC2660_SEUP,
+    .smarten.reg.seup = TMC2660_SEUP,
 };
 
 static void _set_rms_current (TMC2660_t *driver)
 {
-    /*const uint32_t V_fs = 325; // 0.325 * 1000
+    const uint32_t V_fs = 325; // 0.325 * 1000
     uint_fast8_t CS = 31;
-    uint32_t scaler = 0; // = 256
 
     uint16_t RS_scaled = ((float)driver->config.r_sense / 1000.f) * 0xFFFF; // Scale to 16b
-    uint32_t numerator = 11585; // 32 * 256 * sqrt(2)
-    numerator *= RS_scaled;
-    numerator >>= 8;
-    numerator *= driver->config.current;
 
-    do {
-        uint32_t denominator = V_fs * 0xFFFF >> 8;
-        denominator *= CS + 1;
-        scaler = numerator / denominator;
-        if (scaler > 255)
-            scaler = 0; // Maximum
-        else if (scaler < 128)
-            CS--;  // Try again with smaller CS
-    } while(scaler && scaler < 128);
-
-    driver->global_scaler.reg.scaler = scaler;
-    driver->ihold_irun.reg.irun = CS > 31 ? 31 : CS;
-    driver->ihold_irun.reg.ihold = (driver->ihold_irun.reg.irun * driver->config.hold_current_pct) / 100;*/
+    driver->sgcsconf.reg.cs = CS > 31 ? 31 : CS;
 }
 
 void TMC2660_SetDefaults (TMC2660_t *driver)
 {
     memcpy(driver, &tmc2660_defaults, sizeof(TMC2660_t));
 
-    //_set_rms_current(driver);
+    _set_rms_current(driver);
 
-    //driver->chopconf.reg.mres = tmc_microsteps_to_mres(driver->config.microsteps);
+    driver->drvctrl.reg.mres = tmc_microsteps_to_mres(driver->config.microsteps);
 }
-
-/*
-    tmc2660_writeInt(i, TMC2660_DRVCONF,  0x000205);
-	tmc2660_writeInt(i, TMC2660_DRVCTRL,  0x080000);
-	tmc2660_writeInt(i, TMC2660_CHOPCONF, 0x0A0747);
-	tmc2660_writeInt(i, TMC2660_SMARTEN,  0x0C0214);
-	tmc2660_writeInt(i, TMC2660_SGCSCONF, 0x0EF00E); //always append E
-*/
 
 bool TMC2660_Init (TMC2660_t *driver)
 {
     TMC_spi_datagram_t gram = {0};
-    
-    #define TMC2660_DRVCTRL   0x00
-    #define TMC2660_CHOPCONF  0x04
-    #define TMC2660_SMARTEN   0x05
-    #define TMC2660_SGCSCONF  0x06
-    #define TMC2660_DRVCONF   0x07
 
-    // Read drv_status to check if driver is online
-    /*tmc_spi_read(driver->config.motor, (TMC_spi_datagram_t *)&driver->drv_status);
-    if(driver->drv_status.reg.value == 0 || driver->drv_status.reg.value == 0xFFFFFFFF)
-        return false;*/
-
+    #if 0
     //CHOPCONF
     //098511 is good alternate
 
@@ -215,71 +144,38 @@ bool TMC2660_Init (TMC2660_t *driver)
     //gram.payload.value = 0x8202;
     //gram.payload.value = 0x6062; //so far like this one.
     gram.payload.value = 0x6061;
-    tmc_spi_write(driver->config.motor, (TMC_spi_datagram_t *)&gram);  
+    tmc_spi_write(driver->config.motor, (TMC_spi_datagram_t *)&gram);   
 
-    #if 0
-    gram.addr.value = TMC2660_DRVCTRL;
-    gram.payload.value = 0x0205;
-    tmc_spi_write(driver->config.motor, (TMC_spi_datagram_t *)&gram);
-
-    gram.addr.value = TMC2660_CHOPCONF;
-    gram.payload.value = 0x0000;
-    tmc_spi_write(driver->config.motor, (TMC_spi_datagram_t *)&gram);
-
-    gram.addr.value = TMC2660_SMARTEN;
-    gram.payload.value = 0x0747;
-    tmc_spi_write(driver->config.motor, (TMC_spi_datagram_t *)&gram);
-
-    gram.addr.value = TMC2660_SGCSCONF;
-    gram.payload.value = 0x0214;
-    tmc_spi_write(driver->config.motor, (TMC_spi_datagram_t *)&gram);
-
-    gram.addr.value = TMC2660_DRVCONF;
-    gram.payload.value = 0xF00E;
-    tmc_spi_write(driver->config.motor, (TMC_spi_datagram_t *)&gram);  
-
-    #endif              
+    #endif         
     
-    /*
+    
     // Read drv_status to check if driver is online
-    tmc_spi_read(driver->config.motor, (TMC_spi_datagram_t *)&driver->drv_status);
-    if(driver->drv_status.reg.value == 0 || driver->drv_status.reg.value == 0xFFFFFFFF)
+    tmc2660_spi_read(driver->config.motor, (TMC2660_spi_datagram_t *)&driver->drvstatus);
+    if(driver->drvstatus.reg.value == 0 || driver->drvstatus.reg.value == 0xFFFFFFFF)
         return false;
 
     // Perform a status register read to clear reset flag
-    tmc_spi_read(driver->config.motor, (TMC_spi_datagram_t *)&driver->gstat);
+    tmc2660_spi_read(driver->config.motor, (TMC2660_spi_datagram_t *)&driver->drvstatus);
 
-    driver->chopconf.reg.mres = tmc_microsteps_to_mres(driver->config.microsteps);
-    tmc_spi_write(driver->config.motor, (TMC_spi_datagram_t *)&driver->gconf);
-    tmc_spi_write(driver->config.motor, (TMC_spi_datagram_t *)&driver->chopconf);
-    tmc_spi_write(driver->config.motor, (TMC_spi_datagram_t *)&driver->coolconf);
-    tmc_spi_write(driver->config.motor, (TMC_spi_datagram_t *)&driver->pwmconf);
-    tmc_spi_write(driver->config.motor, (TMC_spi_datagram_t *)&driver->tpowerdown);
-    tmc_spi_write(driver->config.motor, (TMC_spi_datagram_t *)&driver->tpwmthrs);
+    driver->drvctrl.reg.mres = tmc_microsteps_to_mres(driver->config.microsteps);
+    tmc2660_spi_write(driver->config.motor, (TMC2660_spi_datagram_t *)&driver->drvctrl);
+    tmc2660_spi_write(driver->config.motor, (TMC2660_spi_datagram_t *)&driver->chopconf);
+    tmc2660_spi_write(driver->config.motor, (TMC2660_spi_datagram_t *)&driver->smarten);
+    tmc2660_spi_write(driver->config.motor, (TMC2660_spi_datagram_t *)&driver->sgcsconf);
+    tmc2660_spi_write(driver->config.motor, (TMC2660_spi_datagram_t *)&driver->drvconf);
 
     TMC2660_SetCurrent(driver, driver->config.current, driver->config.hold_current_pct);
 
     //set to a conservative start value
-    //TMC2660_SetConstantOffTimeChopper(driver->config.motor, 5, 24, 13, 12, true); // move to default values
-
-    // Read back chopconf to check if driver is online
-    uint32_t chopconf = driver->chopconf.reg.value;
-    tmc_spi_read(driver->config.motor, (TMC_spi_datagram_t *)&driver->chopconf);
-
-    return driver->chopconf.reg.value == chopconf;*/
+    TMC2660_SetConstantOffTimeChopper(driver->config.motor, 5, 24, 13, 12, true); // move to default values
     return 1;
 }
 
 uint_fast16_t cs2rms_2660 (TMC2660_t *driver, uint8_t CS)
 {
-    /*uint32_t numerator = (driver->global_scaler.reg.scaler ? driver->global_scaler.reg.scaler : 256) * (CS + 1);
-    numerator *= 325;
-    numerator >>= (8 + 5); // Divide by 256 and 32
-    numerator *= 1000000;
-    uint32_t denominator = driver->config.r_sense;
-    denominator *= 1414;
+    float iRMS = (248.0/256.0) * ((CS + 1.0) / 32.0) * (325 / (float)driver->config.r_sense) * (1.0 / sqrt(2.0));
 
-    return numerator / denominator;*/
+    return (uint_fast16_t) (iRMS*1000);
     return 0;
 }
 
@@ -293,12 +189,13 @@ uint16_t TMC2660_GetCurrent (TMC2660_t *driver)
 void TMC2660_SetCurrent (TMC2660_t *driver, uint16_t mA, uint8_t hold_pct)
 {
     driver->config.current = mA;
+
+    _set_rms_current(driver);
+
     driver->config.hold_current_pct = hold_pct;
 
-    /*_set_rms_current(driver);
-
     tmc_spi_write(driver->config.motor, (TMC_spi_datagram_t *)&driver->global_scaler);
-    tmc_spi_write(driver->config.motor, (TMC_spi_datagram_t *)&driver->ihold_irun);*/
+    tmc_spi_write(driver->config.motor, (TMC_spi_datagram_t *)&driver->ihold_irun);
 }
 
 float TMC2660_GetTPWMTHRS (TMC2660_t *driver, float steps_mm)
@@ -342,7 +239,7 @@ void TMC2660_SetMicrosteps (TMC2660_t *driver, tmc2660_microsteps_t msteps)
 void TMC2660_SetConstantOffTimeChopper (TMC2660_t *driver, uint8_t constant_off_time, uint8_t blank_time, uint8_t fast_decay_time, int8_t sine_wave_offset, bool use_current_comparator)
 {
     //calculate the value acc to the clock cycles
-    /*if (blank_time >= 54)
+    if (blank_time >= 54)
         blank_time = 3;
     else if (blank_time >= 36)
         blank_time = 2;
@@ -354,15 +251,15 @@ void TMC2660_SetConstantOffTimeChopper (TMC2660_t *driver, uint8_t constant_off_
     if (fast_decay_time > 15)
         fast_decay_time = 15;
 
-    if(driver->chopconf.reg.chm)
-        driver->chopconf.reg.fd3 = (fast_decay_time & 0x8) >> 3;
+    //if(driver->chopconf.reg.chm)
+    //    driver->chopconf.reg.fd3 = (fast_decay_time & 0x8) >> 3;
 
     driver->chopconf.reg.tbl = blank_time;
     driver->chopconf.reg.toff = constant_off_time < 2 ? 2 : (constant_off_time > 15 ? 15 : constant_off_time);
     driver->chopconf.reg.hstrt = fast_decay_time & 0x7;
     driver->chopconf.reg.hend = (sine_wave_offset < -3 ? -3 : (sine_wave_offset > 12 ? 12 : sine_wave_offset)) + 3;
 
-    tmc_spi_write(driver->config.motor, (TMC_spi_datagram_t *)&driver->chopconf);*/
+    tmc2660_spi_write(driver->config.motor, (TMC2660_spi_datagram_t *)&driver->chopconf);
 }
 
 TMC2660_status_t TMC2660_WriteRegister (TMC2660_t *driver, TMC2660_datagram_t *reg)
@@ -390,8 +287,8 @@ TMC2660_datagram_t *TMC2660_GetRegPtr (TMC2660_t *driver, tmc2660_regaddr_t reg)
 
     while(ptr && ptr->addr.reg != reg) {
         ptr++;
-        if(ptr->addr.reg == TMC2660Reg_LOST_STEPS && ptr->addr.reg != reg)
-            ptr = NULL;
+        //if(ptr->addr.reg == TMC2660Reg_LOST_STEPS && ptr->addr.reg != reg)
+        //    ptr = NULL;
     }
 
     return ptr;

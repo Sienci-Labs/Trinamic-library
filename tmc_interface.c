@@ -51,6 +51,18 @@ __attribute__((weak)) TMC_spi_status_t tmc_spi_read (trinamic_motor_t driver, TM
     return 0;
 }
 
+/*TMC2660 has a unique datagram.  Only used on integrated boards, this should be defind in board code*/
+__attribute__((weak)) TMC_spi_status_t tmc2660_spi_write (trinamic_motor_t driver, TMC2660_spi_datagram_t *datagram)
+{
+    return 0;
+}
+
+/*TMC2660 has a unique datagram.  Only used on integrated boards, this should be defind in board code*/
+__attribute__((weak)) TMC_spi_status_t tmc2660_spi_read (trinamic_motor_t driver, TMC2660_spi_datagram_t *datagram)
+{
+    return 0;
+}
+
 __attribute__((weak)) void tmc_uart_write (trinamic_motor_t driver, TMC_uart_write_datagram_t *datagram)
 {
 }

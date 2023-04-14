@@ -78,6 +78,28 @@ typedef struct {
     trinamic_motor_t motor;
 } trinamic_config_t;
 
+/* TMC2660 has a different datagram*/
+typedef union {
+    tmc2660_regaddr_t reg;
+    uint8_t value;
+    struct {
+        uint8_t
+        idx   :3,
+        write :1;
+    };
+} TMC2660_addr_t;
+
+typedef union {
+    uint32_t value;
+    uint8_t data[3];
+} TMC2660_payload_t;
+
+typedef struct {
+    TMC2660_addr_t addr;
+    TMC2660_payload_t payload;
+} TMC2660_spi_datagram_t;
+/*TMC2660*/
+
 typedef union {
     uint8_t value;
     struct {
@@ -137,6 +159,9 @@ uint8_t tmc_motors_get (void);
 
 extern TMC_spi_status_t tmc_spi_write (trinamic_motor_t driver, TMC_spi_datagram_t *datagram);
 extern TMC_spi_status_t tmc_spi_read (trinamic_motor_t driver, TMC_spi_datagram_t *datagram);
+
+extern TMC_spi_status_t tmc2660_spi_write (trinamic_motor_t driver, TMC2660_spi_datagram_t *datagram);
+extern TMC_spi_status_t tmc2660_spi_read (trinamic_motor_t driver, TMC2660_spi_datagram_t *datagram);
 
 extern void tmc_uart_write (trinamic_motor_t driver, TMC_uart_write_datagram_t *datagram);
 extern TMC_uart_write_datagram_t *tmc_uart_read (trinamic_motor_t driver, TMC_uart_read_datagram_t *datagram);
