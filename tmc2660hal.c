@@ -76,13 +76,13 @@ static TMC_chopconf_t getChopconf (uint8_t motor)
     TMC_chopconf_t chopconf;
     TMC2660_t *driver = tmcdriver[motor];
 
-    /*tmc_spi_read(tmcdriver[motor]->config.motor, (TMC_spi_datagram_t *)&tmcdriver[motor]->chopconf);
+    //tmc2660_spi_read(tmcdriver[motor]->config.motor, (TMC_spi_datagram_t *)&tmcdriver[motor]->chopconf);
 
-    chopconf.mres = driver->chopconf.reg.mres;
+    chopconf.mres = driver->drvctrl.reg.mres;
     chopconf.toff = driver->chopconf.reg.toff;
     chopconf.tbl = driver->chopconf.reg.tbl;
     chopconf.hend = driver->chopconf.reg.hend;
-    chopconf.hstrt = driver->chopconf.reg.hstrt;*/
+    chopconf.hstrt = driver->chopconf.reg.hstrt;
 
     return chopconf;
 }
@@ -121,15 +121,14 @@ static TMC_ihold_irun_t getIholdIrun (uint8_t motor)
 {
     TMC_ihold_irun_t ihold_irun;
 
-    /*ihold_irun.ihold = tmcdriver[motor]->ihold_irun.reg.ihold;
-    ihold_irun.irun = tmcdriver[motor]->ihold_irun.reg.irun;
-    ihold_irun.iholddelay = tmcdriver[motor]->ihold_irun.reg.iholddelay;
+    ihold_irun.ihold = tmcdriver[motor]->config.hold_current_pct * tmcdriver[motor]->sgcsconf.reg.cs;
+    ihold_irun.irun = tmcdriver[motor]->sgcsconf.reg.cs;
+    ihold_irun.iholddelay = 2; //standstill delay is fixed with 2660.
 
-    return ihold_irun;*/
     return ihold_irun;
 }
 
-static uint32_t getDriverStatusRaw (uint8_t motor)
+static uint32_t getDriverStatusRaw (uint8_t motor)  //only used for reporting
 {
     /*tmc_spi_read(tmcdriver[motor]->config.motor, (TMC_spi_datagram_t *)&tmcdriver[motor]->drv_status);
 

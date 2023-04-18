@@ -40,6 +40,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define _TRINAMIC2660_H_
 
 #include "common.h"
+//#include "tmc26x.h"
 
 //#define TMC2660_COMPLETE // comment out for minimum set of registers
 
@@ -64,7 +65,7 @@ typedef enum {
 #define TMC2660_MODE                1           // 0 = TMCMode_StealthChop - not supported on 2660, 1 = TMCMode_CoolStep, 3 = TMCMode_StallGuard
 #define TMC2660_MICROSTEPS          TMC2660_Microsteps_4
 #define TMC2660_R_SENSE             100          // mOhm
-#define TMC2660_CURRENT             1500         // mA RMS
+#define TMC2660_CURRENT             500         // mA RMS
 #define TMC2660_HOLD_CURRENT_PCT    10  //holding current percent
 
 // CHOPCONF
@@ -136,7 +137,7 @@ typedef union {
         reserved1       :4,
         dedge           :1,
         intpol          :1,
-        reserved2       :7//only count 7 reserved bits for 17 in total.
+        reserved2       :7;//only count 7 reserved bits for 17 in total.
     };
 } TMC2660_drvctrl_reg_t;
 
@@ -151,7 +152,7 @@ typedef union {
         hdec            :2,  
         rndtf           :1,
         chm             :1,
-        tbl             :2                                   
+        tbl             :2;                                   
     };
 } TMC2660_chopconf_reg_t;  //17 bits is complete register.
 
@@ -168,7 +169,7 @@ typedef union {
         reserved3       :1, 
         sedn            :2,    
         seimin          :1,  
-        reserved4       :1                                                                                                   
+        reserved4       :1;                                                                                                   
     };
 } TMC2660_smarten_reg_t;  //17 bits is complete register.
 
@@ -181,7 +182,7 @@ typedef union {
         reserved1       :3,  
         sgt             :7,
         reserved2       :1,    
-        sfilt           :1                                                                                                                                                              
+        sfilt           :1;                                                                                                                                                              
     };
 } TMC2660_sgcsconf_reg_t;  //17 bits is complete register.
 
@@ -202,7 +203,7 @@ typedef union {
         reserved1       :1, 
         slpl            :2,  
         slph            :2,  
-        tst             :1                                                                                                                                                                                                                             
+        tst             :1;                                                                                                                                                                                                                             
     };
 } TMC2660_drvconf_reg_t;  //17 bits is complete register.
 
@@ -221,11 +222,33 @@ typedef union {
         olb        :1, 
         stst       :1,  //standstill indicator.
         chip_rev   :2,  
-        sg_90      :10 //can also be mstep for phase info.                                    
+        sg_90      :10; //can also be mstep for phase info.                                    
     };
 } TMC2660_drvstatus_reg_t;
 
 // --- end of register definitions ---
+
+/* TMC2660 has a different datagram*/
+typedef union {
+    tmc2660_regaddr_t reg;
+    uint8_t value;
+    struct {
+        uint8_t
+        idx   :3,
+        write :1;
+    };
+} TMC2660_addr_t;
+
+typedef union {
+    uint32_t value;
+    uint8_t data[3];
+} TMC2660_payload_t;
+
+typedef struct {
+    TMC2660_addr_t addr;
+    TMC2660_payload_t payload;
+} TMC2660_spi_datagram_t;
+/*TMC2660*/
 
 
 // --- datagrams ---
@@ -294,16 +317,22 @@ typedef struct {
 
 #pragma pack(pop)
 
+extern TMC_spi_status_t tmc2660_spi_write (trinamic_motor_t driver, TMC2660_spi_datagram_t *datagram);
+extern TMC_spi_status_t tmc2660_spi_read (trinamic_motor_t driver, TMC2660_spi_datagram_t *datagram);
+
 bool TMC2660_Init(TMC2660_t *driver);
 void TMC2660_SetDefaults (TMC2660_t *driver);
 void TMC2660_SetCurrent (TMC2660_t *driver, uint16_t mA, uint8_t hold_pct);
 uint16_t TMC2660_GetCurrent (TMC2660_t *driver);
 bool TMC2660_MicrostepsIsValid (uint16_t usteps);
 void TMC2660_SetMicrosteps(TMC2660_t *driver, tmc2660_microsteps_t usteps);
-float TMC2660_GetTPWMTHRS (TMC2660_t *driver, float steps_mm);
+/*float TMC2660_GetTPWMTHRS (TMC2660_t *driver, float steps_mm);
 void TMC2660_SetTPWMTHRS (TMC2660_t *driver, float mm_sec, float steps_mm);
 void TMC2660_SetTHIGH (TMC2660_t *driver, float mm_sec, float steps_mm);
-void TMC2660_SetTCOOLTHRS (TMC2660_t *driver, float mm_sec, float steps_mm);
+void TMC2660_SetTCOOLTHRS (TMC2660_t *driver, float mm_sec, float steps_mm);*/
+
+//stallguard functions
+
 
 void TMC2660_SetConstantOffTimeChopper(TMC2660_t *driver, uint8_t constant_off_time, uint8_t blank_time, uint8_t fast_decay_time, int8_t sine_wave_offset, bool use_current_comparator);
 TMC2660_datagram_t *TMC2660_GetRegPtr (TMC2660_t *driver, tmc2660_regaddr_t reg);
