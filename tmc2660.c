@@ -163,7 +163,7 @@ uint_fast16_t cs2rms_2660 (TMC2660_t *driver, uint8_t CS)
 
 uint16_t TMC2660_GetCurrent (TMC2660_t *driver)
 {
-    //return cs2rms_2660(driver, driver->ihold_irun.reg.irun);
+    return cs2rms_2660(driver, driver->sgcsconf.reg.cs);
     return 0;
 }
 
@@ -194,30 +194,6 @@ void TMC2660_SetCurrent (TMC2660_t *driver, uint16_t mA, uint8_t hold_pct)
 
     tmc2660_spi_write(driver->config.motor, (TMC2660_spi_datagram_t *)&driver->drvconf);
     tmc2660_spi_write(driver->config.motor, (TMC2660_spi_datagram_t *)&driver->sgcsconf);
-}
-
-float TMC2660_GetTPWMTHRS (TMC2660_t *driver, float steps_mm)
-{
-    //return tmc_calc_tstep_inv(&driver->config, driver->tpwmthrs.reg.tpwmthrs, steps_mm);
-    return 0;
-}
-
-void TMC2660_SetTPWMTHRS (TMC2660_t *driver, float mm_sec, float steps_mm) // -> pwm threshold
-{
-    /*driver->tpwmthrs.reg.tpwmthrs = tmc_calc_tstep(&driver->config, mm_sec, steps_mm);
-    tmc_spi_write(driver->config.motor, (TMC_spi_datagram_t *)&driver->tpwmthrs);*/
-}
-
-void TMC2660_SetTHIGH (TMC2660_t *driver, float mm_sec, float steps_mm) // -> pwm threshold
-{
-    /*driver->thigh.reg.thigh = tmc_calc_tstep(&driver->config, mm_sec, steps_mm);
-    tmc_spi_write(driver->config.motor, (TMC_spi_datagram_t *)&driver->thigh);*/
-}
-
-void TMC2660_SetTCOOLTHRS (TMC2660_t *driver, float mm_sec, float steps_mm) // -> pwm threshold
-{
-    /*driver->tcoolthrs.reg.tcoolthrs = tmc_calc_tstep(&driver->config, mm_sec, steps_mm);
-    tmc_spi_write(driver->config.motor, (TMC_spi_datagram_t *)&driver->tcoolthrs);*/
 }
 
 // 1 - 256 in steps of 2^value is valid for TMC2660
@@ -272,7 +248,7 @@ TMC2660_status_t TMC2660_WriteRegister (TMC2660_t *driver, TMC2660_datagram_t *r
 {
     TMC2660_status_t status;
 
-    status.value = tmc_spi_write(driver->config.motor, (TMC_spi_datagram_t *)reg);
+    status.value = tmc2660_spi_write(driver->config.motor, (TMC2660_spi_datagram_t *)reg);
 
     return status;
 }
@@ -281,7 +257,8 @@ TMC2660_status_t TMC2660_ReadRegister (TMC2660_t *driver, TMC2660_datagram_t *re
 {
     TMC2660_status_t status;
 
-    status.value = tmc_spi_read(driver->config.motor, (TMC_spi_datagram_t *)reg);
+    //TMC2660 does not support register reads.
+    //status.value = tmc_spi_read(driver->config.motor, (TMC_spi_datagram_t *)reg);
 
     return status;
 }

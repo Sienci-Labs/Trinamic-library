@@ -89,10 +89,10 @@ static TMC_chopconf_t getChopconf (uint8_t motor)
 
 static uint32_t getStallGuardResult (uint8_t motor)
 {
-    /*tmc_spi_read(tmcdriver[motor]->config.motor, (TMC_spi_datagram_t *)&tmcdriver[motor]->drv_status);
+    //tmc_spi_read(tmcdriver[motor]->config.motor, (TMC_spi_datagram_t *)&tmcdriver[motor]->drv_status);
+    tmc2660_spi_read(tmcdriver[motor]->config.motor, (TMC2660_spi_datagram_t *)&tmcdriver[motor]->drvstatus);
 
-    return (uint32_t)tmcdriver[motor]->drv_status.reg.sg_result;*/
-    return 0;
+    return (uint32_t)tmcdriver[motor]->drvstatus.reg.sg_90;
 }
 
 static TMC_drv_status_t getDriverStatus (uint8_t motor)
@@ -100,19 +100,19 @@ static TMC_drv_status_t getDriverStatus (uint8_t motor)
     TMC_drv_status_t drv_status;
     TMC2660_status_t status;
 
-    /*status.value = tmc_spi_read(tmcdriver[motor]->config.motor, (TMC_spi_datagram_t *)&tmcdriver[motor]->drv_status);
+    status.value = tmc2660_spi_read(tmcdriver[motor]->config.motor, (TMC_spi_datagram_t *)&tmcdriver[motor]->drvstatus);
 
     drv_status.driver_error = status.driver_error;
-    drv_status.sg_result = tmcdriver[motor]->drv_status.reg.sg_result;
-    drv_status.ot = tmcdriver[motor]->drv_status.reg.ot;
-    drv_status.otpw = tmcdriver[motor]->drv_status.reg.otpw;
-    drv_status.cs_actual = tmcdriver[motor]->drv_status.reg.cs_actual;
-    drv_status.stst = tmcdriver[motor]->drv_status.reg.stst;
-    drv_status.fsactive = tmcdriver[motor]->drv_status.reg.fsactive;
-    drv_status.ola = tmcdriver[motor]->drv_status.reg.ola;
-    drv_status.olb = tmcdriver[motor]->drv_status.reg.olb;
-    drv_status.s2ga = tmcdriver[motor]->drv_status.reg.s2ga;
-    drv_status.s2gb = tmcdriver[motor]->drv_status.reg.s2gb;*/
+    drv_status.sg_result = tmcdriver[motor]->drvstatus.reg.sg_90;
+    drv_status.ot = tmcdriver[motor]->drvstatus.reg.ot;
+    drv_status.otpw = tmcdriver[motor]->drvstatus.reg.otpw;
+    drv_status.cs_actual = tmcdriver[motor]->sgcsconf.reg.cs;
+    drv_status.stst = tmcdriver[motor]->drvstatus.reg.stst;
+    drv_status.fsactive = 0;
+    drv_status.ola = tmcdriver[motor]->drvstatus.reg.ola;
+    drv_status.olb = tmcdriver[motor]->drvstatus.reg.olb;
+    drv_status.s2ga = tmcdriver[motor]->drvstatus.reg.shorta;
+    drv_status.s2gb = tmcdriver[motor]->drvstatus.reg.shortb;
 
     return drv_status;
 }
@@ -130,41 +130,9 @@ static TMC_ihold_irun_t getIholdIrun (uint8_t motor)
 
 static uint32_t getDriverStatusRaw (uint8_t motor)  //only used for reporting
 {
-    /*tmc_spi_read(tmcdriver[motor]->config.motor, (TMC_spi_datagram_t *)&tmcdriver[motor]->drv_status);
+    tmc_spi_read(tmcdriver[motor]->config.motor, (TMC_spi_datagram_t *)&tmcdriver[motor]->drvstatus);
 
-    return tmcdriver[motor]->drv_status.reg.value;*/
-    return 0;
-}
-
-static uint32_t getTStep (uint8_t motor)
-{
-    /*tmc_spi_read(tmcdriver[motor]->config.motor, (TMC_spi_datagram_t *)&tmcdriver[motor]->tstep);
-
-    return (uint32_t)tmcdriver[motor]->tstep.reg.tstep;*/
-    return 0;
-}
-
-static void setTHigh (uint8_t motor, float mm_sec, float steps_mm)
-{
-    //TMC2660_SetTHIGH(tmcdriver[motor], mm_sec, steps_mm);
-}
-
-static void setTHighRaw (uint8_t motor, uint32_t value)
-{
-    /*tmcdriver[motor]->thigh.reg.thigh = value;
-    tmc_spi_write(tmcdriver[motor]->config.motor, (TMC_spi_datagram_t *)&tmcdriver[motor]->thigh);*/
-}
-
-
-static void setTCoolThrs (uint8_t motor, float mm_sec, float steps_mm)
-{
-    //TMC2660_SetTCOOLTHRS(tmcdriver[motor], mm_sec, steps_mm);
-}
-
-static void setTCoolThrsRaw (uint8_t motor, uint32_t value)
-{
-    /*tmcdriver[motor]->tcoolthrs.reg.tcoolthrs = value;
-    tmc_spi_write(tmcdriver[motor]->config.motor, (TMC_spi_datagram_t *)&tmcdriver[motor]->tcoolthrs);*/
+    return tmcdriver[motor]->drvstatus.reg.value;
 }
 
 static void stallGuardEnable (uint8_t motor, float feed_rate, float steps_mm, int16_t sensitivity)
@@ -185,20 +153,6 @@ static void stallGuardEnable (uint8_t motor, float feed_rate, float steps_mm, in
     tmc_spi_write(driver->config.motor, (TMC_spi_datagram_t *)&driver->coolconf);*/
 }
 
-static void stealthChopEnable (uint8_t motor)
-{
-    TMC2660_t *driver = tmcdriver[motor];
-
-    /*driver->gconf.reg.diag1_stall = false;
-    driver->gconf.reg.en_pwm_mode = true; // stealthChop
-    tmc_spi_write(driver->config.motor, (TMC_spi_datagram_t *)&driver->gconf);
-
-    driver->pwmconf.reg.pwm_autoscale = true;
-    tmc_spi_write(driver->config.motor, (TMC_spi_datagram_t *)&driver->pwmconf);
-
-    setTCoolThrsRaw(motor, 0);*/
-}
-
 static void coolStepEnable (uint8_t motor)
 {
     TMC2660_t *driver = tmcdriver[motor];
@@ -212,43 +166,9 @@ static void coolStepEnable (uint8_t motor)
     setTCoolThrsRaw(motor, 0);*/
 }
 
-static float getTPWMThrs (uint8_t motor, float steps_mm)
-{
-    //return TMC2660_GetTPWMTHRS(tmcdriver[motor], steps_mm);
-    return 0;
-}
-
-static uint32_t getTPWMThrsRaw (uint8_t motor)
-{
-    //return tmcdriver[motor]->tpwmthrs.reg.tpwmthrs;
-    return 0;
-}
-
-static void setTPWMThrs (uint8_t motor, float mm_sec, float steps_mm)
-{
-    //TMC2660_SetTPWMTHRS(tmcdriver[motor], mm_sec, steps_mm);
-}
-
 static uint8_t getGlobalScaler (uint8_t motor)
 {
     //return tmcdriver[motor]->global_scaler.reg.scaler;
-    return 0;
-}
-
-static void stealthChop (uint8_t motor, bool on)
-{
-    /*tmcdriver[motor]->config.mode = on ? TMCMode_StealthChop : TMCMode_CoolStep;
-
-    if(on)
-        stealthChopEnable(motor);
-    else
-        coolStepEnable(motor);*/
-
-}
-
-static bool stealthChopGet (uint8_t motor)
-{
-    //return tmcdriver[motor]->gconf.reg.en_pwm_mode;
     return 0;
 }
 
@@ -275,12 +195,12 @@ static int16_t get_sg_stall_value (uint8_t motor)
 static void coolconf (uint8_t motor, TMC_coolconf_t coolconf)
 {
     TMC2660_t *driver = tmcdriver[motor];
-/*
-    driver->coolconf.reg.semin = coolconf.semin;
-    driver->coolconf.reg.semax = coolconf.semax;
-    driver->coolconf.reg.sedn = coolconf.sedn;
-    tmc_spi_write(tmcdriver[motor]->config.motor, (TMC_spi_datagram_t *)&driver->coolconf);
-    */
+
+    driver->smarten.reg.semin = coolconf.semin;
+    driver->smarten.reg.semax = coolconf.semax;
+    driver->smarten.reg.sedn = coolconf.sedn;
+    tmc2660_spi_write(tmcdriver[motor]->config.motor, (TMC_spi_datagram_t *)&driver->smarten);
+    
 }
 
 // chopconf
@@ -289,7 +209,6 @@ static void chopper_timing (uint8_t motor, TMC_chopper_timing_t timing)
 {
     TMC2660_t *driver = tmcdriver[motor];
 
-    /*
     driver->chopconf.reg.chm = 0;
     driver->chopconf.reg.hstrt = timing.hstrt + 1;
     driver->chopconf.reg.hend = timing.hend + 3;
@@ -297,15 +216,6 @@ static void chopper_timing (uint8_t motor, TMC_chopper_timing_t timing)
     driver->chopconf.reg.toff = timing.toff;
 
     tmc_spi_write(driver->config.motor, (TMC_spi_datagram_t *)&driver->chopconf);
-    */
-}
-
-static uint8_t pwm_scale (uint8_t motor)
-{
-    /*tmc_spi_read(tmcdriver[motor]->config.motor, (TMC_spi_datagram_t *)&tmcdriver[motor]->pwm_scale);
-
-    return tmcdriver[motor]->pwm_scale.reg.pwm_scale_sum;*/
-    return 0;
 }
 
 static bool read_register (uint8_t motor, uint8_t addr, uint32_t *val)
@@ -338,6 +248,60 @@ static void *get_register_addr (uint8_t motor, uint8_t addr)
     return TMC2660_GetRegPtr(tmcdriver[motor], (tmc2660_regaddr_t)addr);
 }
 
+static uint32_t getTStep (uint8_t motor)
+{
+    //this is here to avoid a null pointer.
+    return 0;
+}
+
+static void stealthChopEnable (uint8_t motor)
+{
+    //this is here to avoid a null pointer.
+    return;
+}
+
+static float getTPWMThrs (uint8_t motor, float steps_mm)
+{
+    //this is here to avoid a null pointer.
+    return 0;
+}
+
+static float getTPWMThrsRaw (uint8_t motor, float steps_mm)
+{
+    //this is here to avoid a null pointer.
+    return 0;
+}
+
+static void setTPWMThrs (uint8_t motor)
+{
+    //this is here to avoid a null pointer.
+    return;
+}
+
+static void setTPWMThrs (uint8_t motor)
+{
+    //this is here to avoid a null pointer.
+    return;
+}
+
+static float stealthChopGet (uint8_t motor, float steps_mm)
+{
+    //this is here to avoid a null pointer.
+    return tmcdriver[motor]->config.mode;
+}
+
+static void stealthChop (uint8_t motor, bool on)
+{
+    tmcdriver[motor]->config.mode = TMCMode_CoolStep;
+    coolStepEnable(motor);
+}
+
+static uint8_t pwm_scale (uint8_t motor)
+{
+    //this is here to avoid a null pointer.
+    return 0;
+}
+
 static const tmchal_t tmchal = {
     .driver = TMC2660,
     .name = "TMC2660",
@@ -349,22 +313,21 @@ static const tmchal_t tmchal = {
     .set_current = setCurrent,
     .get_current = getCurrent,
     .get_chopconf = getChopconf,
-    .get_tstep = getTStep,
+    .get_tstep = getTStep, //not supported
     .get_drv_status = getDriverStatus,
     .get_drv_status_raw = getDriverStatusRaw,
-    .set_tcoolthrs = setTCoolThrs,
-    .set_tcoolthrs_raw = setTCoolThrsRaw,
-    .set_thigh = setTHigh,
-    .set_thigh_raw = setTHighRaw,
+    //.set_tcoolthrs = setTCoolThrs,
+    //.set_tcoolthrs_raw = setTCoolThrsRaw,
+    .set_thigh = NULL,
+    .set_thigh_raw = NULL,
     .stallguard_enable = stallGuardEnable,
-    .stealthchop_enable = stealthChopEnable,
+    .stealthchop_enable = stealthChopEnable, //not supported
     .coolstep_enable = coolStepEnable,
     .get_sg_result = getStallGuardResult,
-    .get_tpwmthrs = getTPWMThrs,
-    .get_tpwmthrs_raw = getTPWMThrsRaw,
-    .set_tpwmthrs = setTPWMThrs,
-    .get_global_scaler = getGlobalScaler,
-    .get_en_pwm_mode = stealthChopGet,
+    .get_tpwmthrs = getTPWMThrs,  //not supported
+    .get_tpwmthrs_raw = getTPWMThrsRaw,  //not supported
+    .set_tpwmthrs = setTPWMThrs,  //not supported
+    .get_en_pwm_mode = stealthChopGet,  //not supported
     .get_ihold_irun = getIholdIrun,
 
     .stealthChop = stealthChop,
@@ -372,7 +335,7 @@ static const tmchal_t tmchal = {
     .sg_stall_value = sg_stall_value,
     .get_sg_stall_value = get_sg_stall_value,
     .coolconf = coolconf,
-    .pwm_scale = pwm_scale,
+    .pwm_scale = pwm_scale, //not supported
     .chopper_timing = chopper_timing,
 
     .get_register_addr = get_register_addr,
