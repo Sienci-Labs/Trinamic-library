@@ -76,7 +76,7 @@ static TMC_chopconf_t getChopconf (uint8_t motor)
     TMC_chopconf_t chopconf;
     TMC2660_t *driver = tmcdriver[motor];
 
-    //tmc2660_spi_read(tmcdriver[motor]->config.motor, (TMC_spi_datagram_t *)&tmcdriver[motor]->chopconf);
+    //tmc2660 doesn't read registers directly.
 
     chopconf.mres = driver->drvctrl.reg.mres;
     chopconf.toff = driver->chopconf.reg.toff;
@@ -89,7 +89,6 @@ static TMC_chopconf_t getChopconf (uint8_t motor)
 
 static uint32_t getStallGuardResult (uint8_t motor)
 {
-    //tmc_spi_read(tmcdriver[motor]->config.motor, (TMC_spi_datagram_t *)&tmcdriver[motor]->drv_status);
     tmc2660_spi_read(tmcdriver[motor]->config.motor, (TMC2660_spi_datagram_t *)&tmcdriver[motor]->drvstatus);
 
     return (uint32_t)tmcdriver[motor]->drvstatus.reg.sg_90;
@@ -100,7 +99,7 @@ static TMC_drv_status_t getDriverStatus (uint8_t motor)
     TMC_drv_status_t drv_status;
     TMC2660_status_t status;
 
-    status.value = tmc2660_spi_read(tmcdriver[motor]->config.motor, (TMC_spi_datagram_t *)&tmcdriver[motor]->drvstatus);
+    status.value = tmc2660_spi_read(tmcdriver[motor]->config.motor, (TMC2660_spi_datagram_t *)&tmcdriver[motor]->drvstatus);
 
     drv_status.driver_error = status.driver_error;
     drv_status.sg_result = tmcdriver[motor]->drvstatus.reg.sg_90;
@@ -130,7 +129,7 @@ static TMC_ihold_irun_t getIholdIrun (uint8_t motor)
 
 static uint32_t getDriverStatusRaw (uint8_t motor)  //only used for reporting
 {
-    tmc_spi_read(tmcdriver[motor]->config.motor, (TMC_spi_datagram_t *)&tmcdriver[motor]->drvstatus);
+    tmc2660_spi_read(tmcdriver[motor]->config.motor, (TMC2660_spi_datagram_t *)&tmcdriver[motor]->drvstatus);
 
     return tmcdriver[motor]->drvstatus.reg.value;
 }
@@ -139,56 +138,27 @@ static void stallGuardEnable (uint8_t motor, float feed_rate, float steps_mm, in
 {
     TMC2660_t *driver = tmcdriver[motor];
 
-    /*driver->gconf.reg.diag1_stall = true;
-    driver->gconf.reg.en_pwm_mode = false; // stealthChop
-    tmc_spi_write(driver->config.motor, (TMC_spi_datagram_t *)&driver->gconf);
-
-    driver->pwmconf.reg.pwm_autoscale = false;
-    tmc_spi_write(driver->config.motor, (TMC_spi_datagram_t *)&driver->pwmconf);
-
-    TMC2660_SetTCOOLTHRS(driver, feed_rate / (60.0f * 1.5f), steps_mm);
-    TMC2660_SetTHIGH(driver, feed_rate / 60.0f * 0.6f, steps_mm);
-
-    driver->coolconf.reg.sgt = sensitivity & 0x7F; // 7-bits signed value
-    tmc_spi_write(driver->config.motor, (TMC_spi_datagram_t *)&driver->coolconf);*/
+    //sg_tst pin is always enabled.
+    driver->sgcsconf.reg.sgt = sensitivity & 0x7F; // 7-bits signed value
+    tmc2660_spi_write(driver->config.motor, (TMC2660_spi_datagram_t *)&driver->sgcsconf);
 }
 
-static void coolStepEnable (uint8_t motor)
-{
-    TMC2660_t *driver = tmcdriver[motor];
-
-    /*driver->gconf.reg.en_pwm_mode = false; // stealthChop
-    tmc_spi_write(driver->config.motor, (TMC_spi_datagram_t *)&driver->gconf);
-
-    driver->pwmconf.reg.pwm_autoscale = false;
-    tmc_spi_write(driver->config.motor, (TMC_spi_datagram_t *)&driver->pwmconf);
-
-    setTCoolThrsRaw(motor, 0);*/
-}
-
-static uint8_t getGlobalScaler (uint8_t motor)
-{
-    //return tmcdriver[motor]->global_scaler.reg.scaler;
-    return 0;
-}
-
-// coolconf
-
+// stallguard filter
 static void sg_filter (uint8_t motor, bool val)
 {
-    //tmcdriver[motor]->coolconf.reg.sfilt = val;
-    //tmc_spi_write(tmcdriver[motor]->config.motor, (TMC_spi_datagram_t *)&tmcdriver[motor]->coolconf);
+    tmcdriver[motor]->sgcsconf.reg.sfilt = val;
+    tmc2660_spi_write(tmcdriver[motor]->config.motor, (TMC2660_spi_datagram_t *)&tmcdriver[motor]->sgcsconf);
 }
 
 static void sg_stall_value (uint8_t motor, int16_t val)
 {
-    //tmcdriver[motor]->coolconf.reg.sgt = val & 0x7F; // 7-bits signed value
-    //tmc_spi_write(tmcdriver[motor]->config.motor, (TMC_spi_datagram_t *)&tmcdriver[motor]->coolconf);
+    tmcdriver[motor]->sgcsconf.reg.sgt = val & 0x7F; // 7-bits signed value
+    tmc2660_spi_write(tmcdriver[motor]->config.motor, (TMC2660_spi_datagram_t *)&tmcdriver[motor]->sgcsconf);
 }
 
 static int16_t get_sg_stall_value (uint8_t motor)
 {
-    //return (int16_t)(tmcdriver[motor]->coolconf.reg.sgt & 0x40 ? tmcdriver[motor]->coolconf.reg.sgt | 0xFF80 : tmcdriver[motor]->coolconf.reg.sgt);
+    return (int16_t)(tmcdriver[motor]->sgcsconf.reg.sgt & 0x40 ? tmcdriver[motor]->sgcsconf.reg.sgt | 0xFF80 : tmcdriver[motor]->sgcsconf.reg.sgt);
     return 0;
 }
 
@@ -199,10 +169,13 @@ static void coolconf (uint8_t motor, TMC_coolconf_t coolconf)
     driver->smarten.reg.semin = coolconf.semin;
     driver->smarten.reg.semax = coolconf.semax;
     driver->smarten.reg.sedn = coolconf.sedn;
-    tmc2660_spi_write(tmcdriver[motor]->config.motor, (TMC_spi_datagram_t *)&driver->smarten);
-    
+    tmc2660_spi_write(tmcdriver[motor]->config.motor, (TMC2660_spi_datagram_t *)&driver->smarten);    
 }
 
+static void coolStepEnable (uint8_t motor)
+{
+    //coolstep is always enabled.
+}
 // chopconf
 
 static void chopper_timing (uint8_t motor, TMC_chopper_timing_t timing)
@@ -215,7 +188,7 @@ static void chopper_timing (uint8_t motor, TMC_chopper_timing_t timing)
     driver->chopconf.reg.tbl = timing.tbl;
     driver->chopconf.reg.toff = timing.toff;
 
-    tmc_spi_write(driver->config.motor, (TMC_spi_datagram_t *)&driver->chopconf);
+    tmc2660_spi_write(driver->config.motor, (TMC2660_spi_datagram_t *)&driver->chopconf);
 }
 
 static bool read_register (uint8_t motor, uint8_t addr, uint32_t *val)
@@ -248,6 +221,12 @@ static void *get_register_addr (uint8_t motor, uint8_t addr)
     return TMC2660_GetRegPtr(tmcdriver[motor], (tmc2660_regaddr_t)addr);
 }
 
+static uint8_t getGlobalScaler (uint8_t motor)
+{
+    //this is here to avoid a null pointer.
+    return 0;
+}
+
 static uint32_t getTStep (uint8_t motor)
 {
     //this is here to avoid a null pointer.
@@ -266,25 +245,19 @@ static float getTPWMThrs (uint8_t motor, float steps_mm)
     return 0;
 }
 
-static float getTPWMThrsRaw (uint8_t motor, float steps_mm)
+static uint32_t getTPWMThrsRaw (uint8_t motor)
 {
     //this is here to avoid a null pointer.
     return 0;
 }
 
-static void setTPWMThrs (uint8_t motor)
+static void setTPWMThrs (uint8_t motor, float mm_sec, float steps_mm)
 {
     //this is here to avoid a null pointer.
     return;
 }
 
-static void setTPWMThrs (uint8_t motor)
-{
-    //this is here to avoid a null pointer.
-    return;
-}
-
-static float stealthChopGet (uint8_t motor, float steps_mm)
+static bool stealthChopGet (uint8_t motor)
 {
     //this is here to avoid a null pointer.
     return tmcdriver[motor]->config.mode;
@@ -292,8 +265,8 @@ static float stealthChopGet (uint8_t motor, float steps_mm)
 
 static void stealthChop (uint8_t motor, bool on)
 {
-    tmcdriver[motor]->config.mode = TMCMode_CoolStep;
-    coolStepEnable(motor);
+    //tmcdriver[motor]->config.mode = TMCMode_CoolStep;
+    //coolStepEnable(motor);
 }
 
 static uint8_t pwm_scale (uint8_t motor)
@@ -318,8 +291,8 @@ static const tmchal_t tmchal = {
     .get_drv_status_raw = getDriverStatusRaw,
     //.set_tcoolthrs = setTCoolThrs,
     //.set_tcoolthrs_raw = setTCoolThrsRaw,
-    .set_thigh = NULL,
-    .set_thigh_raw = NULL,
+    .set_thigh = NULL, //not suported
+    .set_thigh_raw = NULL, //not supported
     .stallguard_enable = stallGuardEnable,
     .stealthchop_enable = stealthChopEnable, //not supported
     .coolstep_enable = coolStepEnable,
@@ -327,10 +300,11 @@ static const tmchal_t tmchal = {
     .get_tpwmthrs = getTPWMThrs,  //not supported
     .get_tpwmthrs_raw = getTPWMThrsRaw,  //not supported
     .set_tpwmthrs = setTPWMThrs,  //not supported
+    .get_global_scaler = getGlobalScaler, //not supported
     .get_en_pwm_mode = stealthChopGet,  //not supported
     .get_ihold_irun = getIholdIrun,
 
-    .stealthChop = stealthChop,
+    .stealthChop = stealthChop,  //not supported
     .sg_filter = sg_filter,
     .sg_stall_value = sg_stall_value,
     .get_sg_stall_value = get_sg_stall_value,
@@ -339,7 +313,7 @@ static const tmchal_t tmchal = {
     .chopper_timing = chopper_timing,
 
     .get_register_addr = get_register_addr,
-    .read_register = read_register,
+    .read_register = read_register,  //not really supported, just returns the status register
     .write_register = write_register
 };
 

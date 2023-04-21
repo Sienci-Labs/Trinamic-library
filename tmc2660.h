@@ -83,12 +83,12 @@ typedef enum {
 #define TMC2660_SG_FILTER           0   // Enable Stallguard Filter
 
 //DRVCONF
-#define TMC2660_DRVCONF             0x0F10   // DRVCONF Register defaults (likely don't need to change)
+#define TMC2660_DRVCONF             0xA310   // 0xA310 DRVCONF Register defaults (likely don't need to change)
 
 //DRVCTRL
 #define TMC2660_MRES                TMC2660_MICROSTEPS
 #define TMC2660_DEDGE               0           //double edge step pulses
-#define TMC2660_INTPOL              0          //step interpolation
+#define TMC2660_INTPOL              1          //step interpolation
 
 //SMARTEN
 #define TMC2660_SEMIN               0   // 0 = 1/2 of CS, 1 = 1/4 of CS
@@ -326,13 +326,8 @@ void TMC2660_SetCurrent (TMC2660_t *driver, uint16_t mA, uint8_t hold_pct);
 uint16_t TMC2660_GetCurrent (TMC2660_t *driver);
 bool TMC2660_MicrostepsIsValid (uint16_t usteps);
 void TMC2660_SetMicrosteps(TMC2660_t *driver, tmc2660_microsteps_t usteps);
-/*float TMC2660_GetTPWMTHRS (TMC2660_t *driver, float steps_mm);
-void TMC2660_SetTPWMTHRS (TMC2660_t *driver, float mm_sec, float steps_mm);
-void TMC2660_SetTHIGH (TMC2660_t *driver, float mm_sec, float steps_mm);
-void TMC2660_SetTCOOLTHRS (TMC2660_t *driver, float mm_sec, float steps_mm);*/
 
 //stallguard functions
-
 
 void TMC2660_SetConstantOffTimeChopper(TMC2660_t *driver, uint8_t constant_off_time, uint8_t blank_time, uint8_t fast_decay_time, int8_t sine_wave_offset, bool use_current_comparator);
 TMC2660_datagram_t *TMC2660_GetRegPtr (TMC2660_t *driver, tmc2660_regaddr_t reg);

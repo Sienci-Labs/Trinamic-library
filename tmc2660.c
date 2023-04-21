@@ -257,8 +257,8 @@ TMC2660_status_t TMC2660_ReadRegister (TMC2660_t *driver, TMC2660_datagram_t *re
 {
     TMC2660_status_t status;
 
-    //TMC2660 does not support register reads.
-    //status.value = tmc_spi_read(driver->config.motor, (TMC_spi_datagram_t *)reg);
+    //TMC2660 does not support register reads.  Just return the shadow register value and driver status?
+    status.value = tmc2660_spi_read(driver->config.motor, (TMC2660_spi_datagram_t *)&driver->drvstatus);
 
     return status;
 }
