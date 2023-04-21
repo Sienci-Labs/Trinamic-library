@@ -91,14 +91,33 @@ bool TMC2660_Init (TMC2660_t *driver)
     
     TMC_spi_datagram_t gram = {0};
 
+    // Read drv_status to check if driver is online
+    tmc2660_spi_read(driver->config.motor, (TMC2660_spi_datagram_t *)&driver->drvstatus);
+    if(driver->drvstatus.reg.value == 0 || driver->drvstatus.reg.value == 0xFFFFFFFF)
+        return false;
+
+    //DRVCTRL
+    //8 microsteps and disable interpolation
+    gram.addr.value = 0x0003;
+    gram.payload.value = 0x0005;
+    tmc_spi_write(driver->config.motor, (TMC_spi_datagram_t *)&gram);    
+
     //CHOPCONF
     //098511 is good alternate
-
     gram.addr.value = 0x09;
     //gram.payload.value = 0x0181;  //most efficient (0x09 addr)
     gram.payload.value = 0x2321;  //most efficient (0x09 addr) rndtf=1
     //gram.payload.value = 0x2181;  //most efficient (0x09 addr) rndtf=1
     tmc_spi_write(driver->config.motor, (TMC_spi_datagram_t *)&gram);
+
+    //SMARTEN
+    gram.addr.value = 0x0A;
+    //gram.payload.value = 0x0000;
+    // Enable CoolStep with minimum current 1/2 CS?
+    //gram.payload.value = 0x8202;
+    //gram.payload.value = 0x6062; //so far like this one.
+    gram.payload.value = 0x6061;
+    tmc_spi_write(driver->config.motor, (TMC_spi_datagram_t *)&gram);   
 
     //SGCSCONF
     gram.addr.value = 0x0D;
@@ -112,32 +131,18 @@ bool TMC2660_Init (TMC2660_t *driver)
     gram.payload.value = 0x0F10;
     tmc_spi_write(driver->config.motor, (TMC_spi_datagram_t *)&gram);
 
-    //DRVCTRL
-    //8 microsteps and disable interpolation
-    gram.addr.value = 0x0003;
-    gram.payload.value = 0x0005;
-    tmc_spi_write(driver->config.motor, (TMC_spi_datagram_t *)&gram);
-
-    //SMARTEN
-    
-    gram.addr.value = 0x0A;
-    //gram.payload.value = 0x0000;
-    // Enable CoolStep with minimum current 1/2 CS?
-    //gram.payload.value = 0x8202;
-    //gram.payload.value = 0x6062; //so far like this one.
-    gram.payload.value = 0x6061;
-    tmc_spi_write(driver->config.motor, (TMC_spi_datagram_t *)&gram);   
+    // Read drv_status to check if driver is online
+    tmc2660_spi_read(driver->config.motor, (TMC2660_spi_datagram_t *)&driver->drvstatus);
+    if(driver->drvstatus.reg.value == 0 || driver->drvstatus.reg.value == 0xFFFFFFFF)
+        return false;    
 
     #endif         
     
-    
+    #if 1
     // Read drv_status to check if driver is online
     tmc2660_spi_read(driver->config.motor, (TMC2660_spi_datagram_t *)&driver->drvstatus);
     if(driver->drvstatus.reg.value == 0 || driver->drvstatus.reg.value == 0xFFFFFFFF)
         return false;
-
-    // Perform a status register read to clear reset flag
-    tmc2660_spi_read(driver->config.motor, (TMC2660_spi_datagram_t *)&driver->drvstatus);
 
     driver->drvctrl.reg.mres = tmc_microsteps_to_mres(driver->config.microsteps);
     tmc2660_spi_write(driver->config.motor, (TMC2660_spi_datagram_t *)&driver->drvctrl);
@@ -150,6 +155,8 @@ bool TMC2660_Init (TMC2660_t *driver)
 
     //set to a conservative start value
     TMC2660_SetConstantOffTimeChopper(driver, 5, 24, 13, 12, true); // move to default values
+    #endif
+
     return 1;
 }
 
@@ -206,7 +213,7 @@ void TMC2660_SetMicrosteps (TMC2660_t *driver, tmc2660_microsteps_t msteps)
 {
     driver->drvctrl.reg.mres = tmc_microsteps_to_mres(msteps);
     driver->config.microsteps = (tmc2660_microsteps_t)(1 << (8 - driver->drvctrl.reg.mres));
-    tmc_spi_write(driver->config.motor, (TMC_spi_datagram_t *)&driver->chopconf);
+    tmc2660_spi_write(driver->config.motor, (TMC2660_spi_datagram_t *)&driver->chopconf);
 }
 
 void TMC2660_SetConstantOffTimeChopper (TMC2660_t *driver, uint8_t constant_off_time, uint8_t blank_time, uint8_t fast_decay_time, int8_t sine_wave_offset, bool use_current_comparator)

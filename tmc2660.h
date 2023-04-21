@@ -91,11 +91,11 @@ typedef enum {
 #define TMC2660_INTPOL              1          //step interpolation
 
 //SMARTEN
-#define TMC2660_SEMIN               0   // 0 = 1/2 of CS, 1 = 1/4 of CS
+#define TMC2660_SEMIN               1   // 0 = Coolstep disabled
 #define TMC2660_SEUP                0   // 0 - 3 (1 - 8)
 #define TMC2660_SEMAX               2   // 0 - 15
 #define TMC2660_SEDN                1   // 0 - 3
-#define TMC2660_SEIMIN              0   // boolean (0 or 1)
+#define TMC2660_SEIMIN              0   // 0 = 1/2 of CS, 1 = 1/4 of CS
 
 // end of default values
 
@@ -232,11 +232,6 @@ typedef union {
 typedef union {
     tmc2660_regaddr_t reg;
     uint8_t value;
-    struct {
-        uint8_t
-        idx   :3,
-        write :1;
-    };
 } TMC2660_addr_t;
 
 typedef union {
@@ -317,8 +312,8 @@ typedef struct {
 
 #pragma pack(pop)
 
-extern TMC_spi_status_t tmc2660_spi_write (trinamic_motor_t driver, TMC2660_spi_datagram_t *datagram);
-extern TMC_spi_status_t tmc2660_spi_read (trinamic_motor_t driver, TMC2660_spi_datagram_t *datagram);
+TMC_spi_status_t tmc2660_spi_write (trinamic_motor_t driver, TMC2660_spi_datagram_t *datagram);
+TMC_spi_status_t tmc2660_spi_read (trinamic_motor_t driver, TMC2660_spi_datagram_t *datagram);
 
 bool TMC2660_Init(TMC2660_t *driver);
 void TMC2660_SetDefaults (TMC2660_t *driver);

@@ -195,7 +195,7 @@ static bool read_register (uint8_t motor, uint8_t addr, uint32_t *val)
 {
     TMC2660_datagram_t reg;
     reg.addr.reg = (tmc2660_regaddr_t)addr;
-    reg.addr.write = Off;
+    //reg.addr.write = Off;
 
     TMC2660_ReadRegister(tmcdriver[motor], &reg);
 
@@ -208,7 +208,7 @@ static bool write_register (uint8_t motor, uint8_t addr, uint32_t val)
 {
     TMC2660_datagram_t reg;
     reg.addr.reg = (tmc2660_regaddr_t)addr;
-    reg.addr.write = On;
+    //reg.addr.write = On;
     reg.payload.value = val;
 
     TMC2660_WriteRegister(tmcdriver[motor], &reg);
