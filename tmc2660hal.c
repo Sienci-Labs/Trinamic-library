@@ -90,6 +90,7 @@ static TMC_chopconf_t getChopconf (uint8_t motor)
 static uint32_t getStallGuardResult (uint8_t motor)
 {
     tmc2660_spi_read(tmcdriver[motor]->config.motor, (TMC2660_spi_datagram_t *)&tmcdriver[motor]->drvstatus);
+    
 
     return (uint32_t)tmcdriver[motor]->drvstatus.reg.sg_90;
 }
@@ -140,7 +141,7 @@ static void stallGuardEnable (uint8_t motor, float feed_rate, float steps_mm, in
 
     //sg_tst pin is always enabled.
     driver->sgcsconf.reg.sgt = sensitivity & 0x7F; // 7-bits signed value
-    tmc2660_spi_write(driver->config.motor, (TMC2660_spi_datagram_t *)&driver->sgcsconf);
+    tmc2660_spi_write(tmcdriver[motor]->config.motor, (TMC2660_spi_datagram_t *)&driver->sgcsconf);
 }
 
 // stallguard filter
@@ -182,20 +183,27 @@ static void chopper_timing (uint8_t motor, TMC_chopper_timing_t timing)
 {
     TMC2660_t *driver = tmcdriver[motor];
 
-    driver->chopconf.reg.chm = 0;
+    #if 0
+    driver->chopconf.reg.chm = TMC2660_CHOPPER_MODE;
     driver->chopconf.reg.hstrt = timing.hstrt + 1;
     driver->chopconf.reg.hend = timing.hend + 3;
     driver->chopconf.reg.tbl = timing.tbl;
     driver->chopconf.reg.toff = timing.toff;
 
     tmc2660_spi_write(driver->config.motor, (TMC2660_spi_datagram_t *)&driver->chopconf);
+    #endif
+}
+
+static bool vsense (uint8_t motor)
+{
+    return tmcdriver[motor]->drvconf.reg.vsense;
 }
 
 static bool read_register (uint8_t motor, uint8_t addr, uint32_t *val)
 {
     TMC2660_datagram_t reg;
-    reg.addr.reg = (tmc2660_regaddr_t)addr;
-    //reg.addr.write = Off;
+    reg.addr = (TMC_addr_t)addr;
+    reg.addr.write = Off;
 
     TMC2660_ReadRegister(tmcdriver[motor], &reg);
 
@@ -207,8 +215,8 @@ static bool read_register (uint8_t motor, uint8_t addr, uint32_t *val)
 static bool write_register (uint8_t motor, uint8_t addr, uint32_t val)
 {
     TMC2660_datagram_t reg;
-    reg.addr.reg = (tmc2660_regaddr_t)addr;
-    //reg.addr.write = On;
+    reg.addr = (TMC_addr_t)addr;
+    reg.addr.write = On;
     reg.payload.value = val;
 
     TMC2660_WriteRegister(tmcdriver[motor], &reg);
@@ -265,7 +273,7 @@ static bool stealthChopGet (uint8_t motor)
 
 static void stealthChop (uint8_t motor, bool on)
 {
-    //tmcdriver[motor]->config.mode = TMCMode_CoolStep;
+    tmcdriver[motor]->config.mode = TMCMode_CoolStep;
     //coolStepEnable(motor);
 }
 
@@ -309,6 +317,7 @@ static const tmchal_t tmchal = {
     .sg_stall_value = sg_stall_value,
     .get_sg_stall_value = get_sg_stall_value,
     .coolconf = coolconf,
+    .vsense = vsense,
     .pwm_scale = pwm_scale, //not supported
     .chopper_timing = chopper_timing,
 

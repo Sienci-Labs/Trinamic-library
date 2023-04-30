@@ -66,24 +66,24 @@ typedef enum {
 #define TMC2660_MICROSTEPS          TMC2660_Microsteps_4
 #define TMC2660_R_SENSE             100          // mOhm
 #define TMC2660_CURRENT             500         // mA RMS
-#define TMC2660_HOLD_CURRENT_PCT    10  //holding current percent
+#define TMC2660_HOLD_CURRENT_PCT    50  //holding current percent
 
 // CHOPCONF
-#define TMC2660_CONSTANT_OFF_TIME   5   // toff: 1 - 15
-#define TMC2660_BLANK_TIME          0   // tbl: 0 = 16, 1 = 24, 2 = 36, 3 = 54 clocks
+#define TMC2660_CONSTANT_OFF_TIME   1   // toff: 1 - 15
+#define TMC2660_BLANK_TIME          1   // tbl: 0 = 16, 1 = 24, 2 = 36, 3 = 54 clocks
 #define TMC2660_CHOPPER_MODE        0   // chm: 0 = spreadCycle, 1 = constant off time  Do not use constant off
-#define TMC2660_HSTR                3   // hstr: 0 - 7
-#define TMC2660_HEND                2   // hend: -3 - 12
+#define TMC2660_HSTR                0   // hstr: 0 - 7
+#define TMC2660_HEND                10   // hend: -3 - 12
 #define TMC2660_HDEC                0   // Hysteresis decrement: 0 16 clocks
-#define TMC2660_RNDTF               0  // Random off time
+#define TMC2660_RNDTF               1  // Random off time
 
 //SGCSCONF
 #define TMC2660_CURRENT_SCALE       15   // current scale default (conservative)
-#define TMC2660_SG_THRESH           0   // Stallguard threshold
-#define TMC2660_SG_FILTER           0   // Enable Stallguard Filter
+#define TMC2660_SG_THRESH           64   // Stallguard threshold
+#define TMC2660_SG_FILTER           1   // Enable Stallguard Filter
 
 //DRVCONF
-#define TMC2660_DRVCONF             0xA310   // 0xA310 DRVCONF Register defaults (likely don't need to change)
+#define TMC2660_DRVCONF             0x0310   // 0x0310 DRVCONF Register defaults (likely don't need to change)
 
 //DRVCTRL
 #define TMC2660_MRES                TMC2660_MICROSTEPS
@@ -92,24 +92,36 @@ typedef enum {
 
 //SMARTEN
 #define TMC2660_SEMIN               1   // 0 = Coolstep disabled
-#define TMC2660_SEUP                0   // 0 - 3 (1 - 8)
-#define TMC2660_SEMAX               2   // 0 - 15
-#define TMC2660_SEDN                1   // 0 - 3
+#define TMC2660_SEUP                3   // 0 - 3 (1 - 8)
+#define TMC2660_SEMAX               0   // 0 - 15
+#define TMC2660_SEDN                3   // 0 - 
 #define TMC2660_SEIMIN              0   // 0 = 1/2 of CS, 1 = 1/4 of CS
 
 // end of default values
 
 typedef uint8_t tmc2660_regaddr_t;
 
+#define TMC2660_WRITE_BIT 0x08
 
+#if 1
 //adresses are 3 bits.
 enum tmc2660_regaddr_t {
-    TMC2660Reg_DRVCTRL           = 0x0, //only ever going to use step/dir mode.
+    TMC2660Reg_DRVCTRL          = 0x0, //only ever going to use step/dir mode.
+    TMC2660Reg_CHOPCONF         = 0x8,
+    TMC2660Reg_SMARTEN          = 0xA, //Coolstep control register.
+    TMC2660Reg_SGCSCONF         = 0xD, //Stallguard2 control register.    
+    TMC2660Reg_DRVCONF          = 0xE, //Driver Control Register.
+};
+#else
+//adresses are 3 bits.
+enum tmc2660_regaddr_t {
+    TMC2660Reg_DRVCTRL          = 0x0, //only ever going to use step/dir mode.
     TMC2660Reg_CHOPCONF         = 0x1,
     TMC2660Reg_SMARTEN          = 0x5, //Coolstep control register.
+    TMC2660Reg_SGCSCONF         = 0x3, //Stallguard2 control register.    
     TMC2660Reg_DRVCONF          = 0x7, //Driver Control Register.
-    TMC2660Reg_SGCSCONF         = 0x9, //Stallguard2 control register.
 };
+#endif
 
 typedef union {
     uint8_t value;
@@ -229,9 +241,13 @@ typedef union {
 // --- end of register definitions ---
 
 /* TMC2660 has a different datagram*/
+
 typedef union {
-    tmc2660_regaddr_t reg;
     uint8_t value;
+    struct {
+        uint8_t
+        idx   :3
+    };
 } TMC2660_addr_t;
 
 typedef union {
@@ -249,32 +265,32 @@ typedef struct {
 // --- datagrams ---
 
 typedef struct {
-    TMC2660_addr_t addr;
+    TMC_addr_t addr;
     TMC2660_drvctrl_reg_t reg;
 } TMC2660_drvctrl_dgr_t;
 
 typedef struct {
-    TMC2660_addr_t addr;
+    TMC_addr_t addr;
     TMC2660_chopconf_reg_t reg;
 } TMC2660_chopconf_dgt_t;
 
 typedef struct {
-    TMC2660_addr_t addr;
+    TMC_addr_t addr;
     TMC2660_smarten_reg_t reg;
 } TMC2660_smarten_dgr_t;
 
 typedef struct {
-    TMC2660_addr_t addr;
+    TMC_addr_t addr;
     TMC2660_sgcsconf_reg_t reg;
 } TMC2660_sgcsconf_dgr_t;
 
 typedef struct {
-    TMC2660_addr_t addr;
+    TMC_addr_t addr;
     TMC2660_drvconf_reg_t reg;
 } TMC2660_drvconf_dgr_t;
 
 typedef struct {
-    //TMC2660_addr_t addr;//there is no address on this register.
+    //TMC_addr_t addr;//there is no address on this register.
     TMC2660_drvstatus_reg_t reg;
 } TMC2660_drvstatus_dgr_t;
 
@@ -292,7 +308,7 @@ typedef union {
 } TMC2660_payload;
 
 typedef struct {
-    TMC2660_addr_t addr;
+    TMC_addr_t addr;
     TMC2660_payload payload;
 } TMC2660_datagram_t;
 
