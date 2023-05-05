@@ -89,8 +89,9 @@ static TMC_chopconf_t getChopconf (uint8_t motor)
 
 static uint32_t getStallGuardResult (uint8_t motor)
 {
-    tmc2660_spi_read(tmcdriver[motor]->config.motor, (TMC2660_spi_datagram_t *)&tmcdriver[motor]->drvstatus);
+    TMC_drv_status_t drv_status;
     
+    tmc2660_spi_read(tmcdriver[motor]->config.motor, (TMC2660_spi_datagram_t *)&tmcdriver[motor]->drvstatus);
 
     return (uint32_t)tmcdriver[motor]->drvstatus.reg.sg_90;
 }
@@ -201,11 +202,12 @@ static bool vsense (uint8_t motor)
 
 static bool read_register (uint8_t motor, uint8_t addr, uint32_t *val)
 {
-    TMC2660_datagram_t reg;
+    TMC2660_datagram_t reg, read;
     reg.addr = (TMC_addr_t)addr;
     reg.addr.write = Off;
+    TMC2660_ReadRegister(tmcdriver[motor], &read);
 
-    TMC2660_ReadRegister(tmcdriver[motor], &reg);
+    reg =  *TMC2660_GetRegPtr (tmcdriver[motor], addr);    
 
     *val = reg.payload.value;
 
