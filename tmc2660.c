@@ -100,7 +100,7 @@ bool TMC2660_Init (TMC2660_t *driver)
     //4 microsteps and disable interpolation
     gram.addr.value = 0x0003;//16 bit shift
     //gram.addr.value = TMC2660Reg_DRVCTRL;
-    gram.payload.value = 0x00205;
+    gram.payload.value = 0x00206;
     tmc_spi_write(driver->config.motor, (TMC_spi_datagram_t *)&gram);    
 
     //CHOPCONF
@@ -119,14 +119,17 @@ bool TMC2660_Init (TMC2660_t *driver)
     // Enable CoolStep with minimum current 1/2 CS?
     //gram.payload.value = 0x8202;
     //gram.payload.value = 0x6062; //so far like this one.
-    gram.payload.value = 0x6061;
+    //gram.payload.value = 0x6061;
+    //gram.payload.value = 0xAA62;
+    gram.payload.value = 0xE560;
     tmc_spi_write(driver->config.motor, (TMC_spi_datagram_t *)&gram);   
 
     //SGCSCONF
     gram.addr.value = 0x0D;//16 bit shift
     //gram.addr.value = TMC2660Reg_SGCSCONF;
-    //gram.payload.value = 0x0219; //1.4A current 2 stallguard
-    gram.payload.value = 0x021F; //3.1A current 2 stallguard
+    //gram.payload.value = 0x0219; //1.4A current 2 stallguard //don't use this with 0.05R sense
+    //gram.payload.value = 0x020D; //3.1A current 2 stallguard
+    gram.payload.value = 0x160D; //3.1A current 22 stallguard
     tmc_spi_write(driver->config.motor, (TMC_spi_datagram_t *)&gram);
 
     //DRVCONF
@@ -141,6 +144,8 @@ bool TMC2660_Init (TMC2660_t *driver)
     //tmc2660_spi_read(driver->config.motor, (TMC2660_spi_datagram_t *)&driver->drvstatus);
     //if(driver->drvstatus.reg.value == 0 || driver->drvstatus.reg.value == 0xFFFFFFFF)
     //    return false;    
+
+    stallguard thres of 17 seems to work ok?
 
     #endif         
     
@@ -187,7 +192,8 @@ uint_fast16_t cs2rms_2660 (TMC2660_t *driver, uint8_t CS)
     else   
         v_sense = 325;
     
-    float iRMS = (248.0/256.0) * ((CS + 1.0) / 32.0) * (v_sense / (float)driver->config.r_sense) * (1.0 / sqrt(2.0));
+    //float iRMS = (248.0/256.0) * ((CS + 1.0) / 32.0) * (v_sense / (float)driver->config.r_sense) * (1.0 / sqrt(2.0));
+    float iRMS = (248.0/256.0) * ((CS + 1.0) / 32.0) * (v_sense / (float)TMC2660_R_SENSE) * (1.0 / sqrt(2.0));
 
     return (uint_fast16_t) (iRMS*1000);
     return 0;
@@ -206,29 +212,14 @@ void TMC2660_SetCurrent (TMC2660_t *driver, uint16_t mA, uint8_t hold_pct)
     driver->config.current = mA;
     driver->config.hold_current_pct = hold_pct;
 
-    float maxv = ((float)driver->config.r_sense * (float)driver->config.current * 32.0f) / 1000000.0f;
-
-    // Calculate the current scaling from the max current setting (in mA),
-    // this is derived from I=(cs+1)/32*(Vsense/Rsense)
-    // leading to cs = CS = 32*R*I/V (with V = 0.31V or 0.165V and I = 1000*current)
-    // with Rsense=0.15
-    // For vsense = 0.310V (VSENSE not set)
-    // or vsense = 0.165V (VSENSE set)
-
-    //uint8_t current_scaling = (uint8_t)((maxv / 0.31f) - 0.5f);
+    float maxv = ((float)TMC2660_R_SENSE * (float)driver->config.current * 32.0f) / 1000000.0f;
 
     uint8_t current_scaling = (uint8_t)((maxv / 0.31f) - 0.5f);
 
-    // If the current scaling is too low
-    // set the vsense bit to get a use half the sense voltage (to support lower motor currents)
-    // and recalculate the current setting
     if ((driver->drvconf.reg.vsense = (current_scaling < 16)))
         current_scaling = (uint8_t)((maxv / 0.165f) - 0.5f);
 
     driver->sgcsconf.reg.cs = current_scaling > 31 ? 31 : current_scaling;
-
-    //driver->sgcsconf.reg.cs = 29;
-    //driver->drvconf.reg.vsense = 0;
 
     tmc2660_spi_write(driver->config.motor, (TMC2660_spi_datagram_t *)&driver->drvconf);
     tmc2660_spi_write(driver->config.motor, (TMC2660_spi_datagram_t *)&driver->sgcsconf);
@@ -242,25 +233,15 @@ bool TMC2660_MicrostepsIsValid (uint16_t usteps)
 
 void TMC2660_SetMicrosteps (TMC2660_t *driver, tmc2660_microsteps_t usteps)
 {
-    //if(driver->drvconf.reg.sdoff)
-    //    return;
-
-    uint8_t value = 0;
-
-    driver->config.microsteps = usteps = (usteps == 0 ? TMC2660_Microsteps_1 : usteps);
-
-    while((usteps & 0x01) == 0) {
-        value++;
-        usteps >>= 1;
-    }
-
-    driver->drvctrl.reg.mres = 8 - (value > 8 ? 8 : value);
+    driver->drvctrl.reg.mres = usteps;
 
     tmc2660_spi_write(driver->config.motor, (TMC2660_spi_datagram_t *)&driver->drvctrl);
 }
 
 void TMC2660_SetConstantOffTimeChopper (TMC2660_t *driver, uint8_t constant_off_time, uint8_t blank_time, uint8_t fast_decay_time, int8_t sine_wave_offset, bool use_current_comparator)
 {
+    
+    #if 0
     //calculate the value acc to the clock cycles
     if (blank_time >= 54)
         blank_time = 3;
@@ -283,6 +264,7 @@ void TMC2660_SetConstantOffTimeChopper (TMC2660_t *driver, uint8_t constant_off_
     driver->chopconf.reg.hend = (sine_wave_offset < -3 ? -3 : (sine_wave_offset > 12 ? 12 : sine_wave_offset)) + 3;
 
     tmc2660_spi_write(driver->config.motor, (TMC2660_spi_datagram_t *)&driver->chopconf);
+    #endif
 }
 
 void TMC2660_SetDefaults (TMC2660_t *driver)

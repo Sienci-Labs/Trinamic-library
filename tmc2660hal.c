@@ -58,7 +58,7 @@ static bool isValidMicrosteps (uint8_t motor, uint16_t msteps)
 
 static void setMicrosteps (uint8_t motor, uint16_t msteps)
 {
-   TMC2660_SetMicrosteps(tmcdriver[motor], (tmc2660_microsteps_t)msteps);
+   TMC2660_SetMicrosteps(tmcdriver[motor], (tmc2660_microsteps_t)tmc_microsteps_to_mres(msteps));
 }
 
 static void setCurrent (uint8_t motor, uint16_t mA, uint8_t hold_pct)
@@ -84,12 +84,16 @@ static TMC_chopconf_t getChopconf (uint8_t motor)
     chopconf.hend = driver->chopconf.reg.hend;
     chopconf.hstrt = driver->chopconf.reg.hstrt;
 
+    chopconf.toff = (uint32_t)0x34;
+    chopconf.tbl = (uint32_t)0x35;
+    chopconf.hend = (uint32_t)0x36;
+    chopconf.hstrt = (uint32_t)0x37;
+
     return chopconf;
 }
 
 static uint32_t getStallGuardResult (uint8_t motor)
 {
-    TMC_drv_status_t drv_status;
     
     tmc2660_spi_read(tmcdriver[motor]->config.motor, (TMC2660_spi_datagram_t *)&tmcdriver[motor]->drvstatus);
 
@@ -160,8 +164,7 @@ static void sg_stall_value (uint8_t motor, int16_t val)
 
 static int16_t get_sg_stall_value (uint8_t motor)
 {
-    return (int16_t)(tmcdriver[motor]->sgcsconf.reg.sgt & 0x40 ? tmcdriver[motor]->sgcsconf.reg.sgt | 0xFF80 : tmcdriver[motor]->sgcsconf.reg.sgt);
-    return 0;
+    return (int16_t)tmcdriver[motor]->sgcsconf.reg.sgt;
 }
 
 static void coolconf (uint8_t motor, TMC_coolconf_t coolconf)
