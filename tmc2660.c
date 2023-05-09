@@ -161,8 +161,6 @@ TMC_spi_datagram_t gram = {0};
     //DRVCONF
     tmc2660_spi_write(driver->config.motor, (TMC2660_spi_datagram_t *)&driver->drvconf);
 
-    driver->drvctrl.reg.mres = tmc_microsteps_to_mres(driver->config.microsteps);
-
     //DRVCTRL
     tmc2660_spi_write(driver->config.motor, (TMC2660_spi_datagram_t *)&driver->drvctrl);
 
@@ -175,8 +173,8 @@ TMC_spi_datagram_t gram = {0};
     //SGCSCONF
     tmc2660_spi_write(driver->config.motor, (TMC2660_spi_datagram_t *)&driver->sgcsconf);
 
+    TMC2660_SetMicrosteps(driver, (tmc2660_microsteps_t)driver->config.microsteps);
     TMC2660_SetCurrent(driver, driver->config.current, driver->config.hold_current_pct);
-    TMC2660_SetMicrosteps(driver, driver->drvctrl.reg.mres);
 
     #endif
 
@@ -233,7 +231,7 @@ bool TMC2660_MicrostepsIsValid (uint16_t usteps)
 
 void TMC2660_SetMicrosteps (TMC2660_t *driver, tmc2660_microsteps_t usteps)
 {
-    driver->drvctrl.reg.mres = usteps;
+    driver->drvctrl.reg.mres = tmc_microsteps_to_mres(usteps);
 
     tmc2660_spi_write(driver->config.motor, (TMC2660_spi_datagram_t *)&driver->drvctrl);
 }
@@ -270,12 +268,6 @@ void TMC2660_SetConstantOffTimeChopper (TMC2660_t *driver, uint8_t constant_off_
 void TMC2660_SetDefaults (TMC2660_t *driver)
 {
     memcpy(driver, &tmc2660_defaults, sizeof(TMC2660_t));
-
-    TMC2660_Init (driver);
-
-    TMC2660_SetCurrent(driver, TMC2660_CURRENT, TMC2660_HOLD_CURRENT_PCT);
-
-    TMC2660_SetMicrosteps(driver, TMC2660_MICROSTEPS);
 }
 
 TMC2660_status_t TMC2660_WriteRegister (TMC2660_t *driver, TMC2660_datagram_t *reg)

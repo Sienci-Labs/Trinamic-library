@@ -58,7 +58,7 @@ static bool isValidMicrosteps (uint8_t motor, uint16_t msteps)
 
 static void setMicrosteps (uint8_t motor, uint16_t msteps)
 {
-   TMC2660_SetMicrosteps(tmcdriver[motor], (tmc2660_microsteps_t)tmc_microsteps_to_mres(msteps));
+   TMC2660_SetMicrosteps(tmcdriver[motor], (tmc2660_microsteps_t)msteps);
 }
 
 static void setCurrent (uint8_t motor, uint16_t mA, uint8_t hold_pct)
@@ -83,11 +83,6 @@ static TMC_chopconf_t getChopconf (uint8_t motor)
     chopconf.tbl = driver->chopconf.reg.tbl;
     chopconf.hend = driver->chopconf.reg.hend;
     chopconf.hstrt = driver->chopconf.reg.hstrt;
-
-    chopconf.toff = (uint32_t)0x34;
-    chopconf.tbl = (uint32_t)0x35;
-    chopconf.hend = (uint32_t)0x36;
-    chopconf.hstrt = (uint32_t)0x37;
 
     return chopconf;
 }
@@ -342,7 +337,6 @@ const tmchal_t *TMC2660_AddMotor (motor_map_t motor, uint16_t current, uint8_t m
         tmcdriver[motor.id]->config.current = current;
         tmcdriver[motor.id]->config.microsteps = microsteps;
         tmcdriver[motor.id]->config.r_sense = r_sense;
-        tmcdriver[motor.id]->drvctrl.reg.mres = tmc_microsteps_to_mres(microsteps);
     }
 
     if(ok && !(ok = TMC2660_Init(tmcdriver[motor.id]))) {

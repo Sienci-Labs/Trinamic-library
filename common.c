@@ -38,6 +38,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "common.h"
 
+
 static uint8_t tmc_motors = 0;
 
 // 1 - 256 in steps of 2^value is valid

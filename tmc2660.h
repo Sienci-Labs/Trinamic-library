@@ -47,15 +47,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma pack(push, 1)
 
 typedef enum {
-    TMC2660_Microsteps_1 = 8,
-    TMC2660_Microsteps_2 = 7,
-    TMC2660_Microsteps_4 = 6,
-    TMC2660_Microsteps_8 = 5,
-    TMC2660_Microsteps_16 = 4,
-    TMC2660_Microsteps_32 = 3,
-    TMC2660_Microsteps_64 = 2,
-    TMC2660_Microsteps_128 = 1,
-    TMC2660_Microsteps_256 = 0
+    TMC2660_Microsteps_1 = 1,
+    TMC2660_Microsteps_2 = 2,
+    TMC2660_Microsteps_4 = 4,
+    TMC2660_Microsteps_8 = 8,
+    TMC2660_Microsteps_16 = 16,
+    TMC2660_Microsteps_32 = 32,
+    TMC2660_Microsteps_64 = 64,
+    TMC2660_Microsteps_128 = 128,
+    TMC2660_Microsteps_256 = 256
 } tmc2660_microsteps_t;
 
 
@@ -64,30 +64,30 @@ typedef enum {
 // General
 #define TMC2660_F_CLK               15000000UL  // factory tuned to 12MHz - see datasheet for calibration procedure if required
 #define TMC2660_MODE                1           // 0 = TMCMode_StealthChop - not supported on 2660, 1 = TMCMode_CoolStep, 3 = TMCMode_StallGuard
-#define TMC2660_MICROSTEPS          TMC2660_Microsteps_4
+#define TMC2660_MICROSTEPS          TMC2660_Microsteps_8           // Default 8x microsteps
 #define TMC2660_R_SENSE             50          // mOhm
 #define TMC2660_CURRENT             500         // mA RMS
 #define TMC2660_HOLD_CURRENT_PCT    50  //holding current percent
 
 // CHOPCONF
 #define TMC2660_CONSTANT_OFF_TIME   1   // toff: 1 - 15
-#define TMC2660_BLANK_TIME          1   // tbl: 0 = 16, 1 = 24, 2 = 36, 3 = 54 clocks
+#define TMC2660_BLANK_TIME          3   // tbl: 0 = 16, 1 = 24, 2 = 36, 3 = 54 clocks
 #define TMC2660_CHOPPER_MODE        0   // chm: 0 = spreadCycle, 1 = constant off time  Do not use constant off
-#define TMC2660_HSTR                0   // hstr: 0 - 7
+#define TMC2660_HSTR                2   // hstr: 0 - 7
 #define TMC2660_HEND                10   // hend: -3 - 12
 #define TMC2660_HDEC                0   // Hysteresis decrement: 0 16 clocks
 #define TMC2660_RNDTF               1  // Random off time
 
 //SGCSCONF
 #define TMC2660_CURRENT_SCALE       10   // current scale default (conservative)
-#define TMC2660_SG_THRESH           18   // Stallguard threshold
+#define TMC2660_SG_THRESH           2   // Stallguard threshold
 #define TMC2660_SG_FILTER           1   // Enable Stallguard Filter
 
 //DRVCONF
 #define TMC2660_DRVCONF             0x0310   // 0x0310 DRVCONF Register defaults (likely don't need to change)
 
 //DRVCTRL
-#define TMC2660_MRES                TMC2660_MICROSTEPS
+#define TMC2660_MRES                5           //default 8x microsteps
 #define TMC2660_DEDGE               0           //double edge step pulses
 #define TMC2660_INTPOL              1          //step interpolation
 
