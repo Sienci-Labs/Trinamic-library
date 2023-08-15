@@ -45,6 +45,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string.h>
 #include <math.h>
 #include "tmc2660.h"
+#include "driver.h"
 
 static const TMC2660_t tmc2660_defaults = {
     .config.f_clk = TMC2660_F_CLK,
@@ -151,10 +152,20 @@ bool TMC2660_Init (TMC2660_t *driver)
     
     #if 1
     // Read drv_status to check if driver is online
-    tmc2660_spi_read(driver->config.motor, (TMC2660_spi_datagram_t *)&driver->drvstatus);
-    if(driver->drvstatus.reg.value == 0 || driver->drvstatus.reg.value == 0xFFFFFFFF)
-        return false;
+    uint32_t ms = hal.get_elapsed_ticks() + 250;
+    bool status = false;
 
+    while(ms >= hal.get_elapsed_ticks() && status == false) {
+        tmc2660_spi_read(driver->config.motor, (TMC2660_spi_datagram_t *)&driver->drvstatus);
+        if(driver->drvstatus.reg.value == 0 || driver->drvstatus.reg.value == 0xFFFFFF){
+            status = false;
+        } else{
+            status = true;
+        }
+        HAL_Delay(5);
+    }       
+if (status == false)
+    return status;
 
 TMC_spi_datagram_t gram = {0};
 
