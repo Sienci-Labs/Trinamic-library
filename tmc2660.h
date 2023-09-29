@@ -84,7 +84,7 @@ typedef enum {
 #define TMC2660_SG_FILTER           1   // Enable Stallguard Filter -- this gets overwritten upon motor add by defaults from trinamic.h
 
 //DRVCONF
-#define TMC2660_DRVCONF             0x0310   // 0x0310 DRVCONF Register defaults (likely don't need to change)
+#define TMC2660_DRVCONF             0xA31F   // DRVCONF Register defaults (likely don't need to change)  All protections enabled.
 
 //DRVCTRL
 #define TMC2660_MRES                5           //default 8x microsteps
