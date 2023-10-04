@@ -218,11 +218,11 @@ uint16_t TMC2660_GetCurrent (TMC2660_t *driver)
 void TMC2660_SetCurrent (TMC2660_t *driver, uint16_t mA, uint8_t hold_pct)
 {
     
-    #if 0
+    #ifdef MAXIMUM_STEPPER_CURRENT_2660
     if (mA > MAXIMUM_STEPPER_CURRENT_2660)
         mA = MAXIMUM_STEPPER_CURRENT_2660;
     #endif
-    
+
     driver->config.current = mA;
     driver->config.hold_current_pct = hold_pct;
 
