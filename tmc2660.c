@@ -156,7 +156,7 @@ bool TMC2660_Init (TMC2660_t *driver)
     bool status = false;
 
     while(ms >= hal.get_elapsed_ticks() && status == false) {
-        tmc2660_spi_read(driver->config.motor, (TMC2660_spi_datagram_t *)&driver->drvstatus);
+        tmc2660_spi_read(driver->config.motor, (TMC2660_spi_datagram_t *)&driver->drvconf, (TMC2660_spi_datagram_t *)&driver->drvstatus);
         if(driver->drvstatus.reg.value == 0 || driver->drvstatus.reg.value == 0xFFFFFF){
             status = false;
         } else{
@@ -300,7 +300,7 @@ TMC2660_status_t TMC2660_ReadRegister (TMC2660_t *driver, TMC2660_datagram_t *re
     TMC2660_status_t status;
 
     //TMC2660 does not support register reads.  Just return the shadow register value and driver status?
-    status.value = tmc2660_spi_read(driver->config.motor, (TMC2660_spi_datagram_t *)&driver->drvstatus);
+    status.value = tmc2660_spi_read(driver->config.motor, (TMC2660_spi_datagram_t *)&driver->drvconf, (TMC2660_spi_datagram_t *)&driver->drvstatus);
 
     return status;
 }

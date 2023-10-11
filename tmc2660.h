@@ -331,7 +331,8 @@ typedef struct {
 #pragma pack(pop)
 
 TMC_spi_status_t tmc2660_spi_write (trinamic_motor_t driver, TMC2660_spi_datagram_t *datagram);
-TMC_spi_status_t tmc2660_spi_read (trinamic_motor_t driver, TMC2660_spi_datagram_t *datagram);
+//spi read always needs to have valid data in safe_datagram pointer
+TMC_spi_status_t tmc2660_spi_read (trinamic_motor_t driver, TMC2660_spi_datagram_t *safe_datagram, TMC2660_spi_datagram_t *datagram);
 
 bool TMC2660_Init(TMC2660_t *driver);
 void TMC2660_SetDefaults (TMC2660_t *driver);

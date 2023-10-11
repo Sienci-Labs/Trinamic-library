@@ -90,7 +90,7 @@ static TMC_chopconf_t getChopconf (uint8_t motor)
 static uint32_t getStallGuardResult (uint8_t motor)
 {
     
-    tmc2660_spi_read(tmcdriver[motor]->config.motor, (TMC2660_spi_datagram_t *)&tmcdriver[motor]->drvstatus);
+    tmc2660_spi_read(tmcdriver[motor]->config.motor, (TMC2660_spi_datagram_t *)&tmcdriver[motor]->drvconf, (TMC2660_spi_datagram_t *)&tmcdriver[motor]->drvstatus);
 
     return (uint32_t)tmcdriver[motor]->drvstatus.reg.sg_90;
 }
@@ -100,7 +100,7 @@ static TMC_drv_status_t getDriverStatus (uint8_t motor)
     TMC_drv_status_t drv_status;
     TMC2660_status_t status;
 
-    status.value = tmc2660_spi_read(tmcdriver[motor]->config.motor, (TMC2660_spi_datagram_t *)&tmcdriver[motor]->drvstatus);
+    status.value = tmc2660_spi_read(tmcdriver[motor]->config.motor, (TMC2660_spi_datagram_t *)&tmcdriver[motor]->drvconf, (TMC2660_spi_datagram_t *)&tmcdriver[motor]->drvstatus);
 
     drv_status.driver_error = status.driver_error;
     drv_status.sg_result = tmcdriver[motor]->drvstatus.reg.sg_90;
@@ -139,7 +139,7 @@ static TMC_ihold_irun_t getIholdIrun (uint8_t motor)
 
 static uint32_t getDriverStatusRaw (uint8_t motor)  //only used for reporting
 {
-    tmc2660_spi_read(tmcdriver[motor]->config.motor, (TMC2660_spi_datagram_t *)&tmcdriver[motor]->drvstatus);
+    tmc2660_spi_read(tmcdriver[motor]->config.motor, (TMC2660_spi_datagram_t *)&tmcdriver[motor]->drvconf, (TMC2660_spi_datagram_t *)&tmcdriver[motor]->drvstatus);
 
     return tmcdriver[motor]->drvstatus.reg.value;
 }
