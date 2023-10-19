@@ -72,15 +72,15 @@ typedef enum {
 // CHOPCONF
 #define TMC2660_CONSTANT_OFF_TIME   1   // toff: 1 - 15
 #define TMC2660_BLANK_TIME          3   // tbl: 0 = 16, 1 = 24, 2 = 36, 3 = 54 clocks
-#define TMC2660_CHOPPER_MODE        0   // chm: 0 = spreadCycle, 1 = constant off time  Do not use constant off
-#define TMC2660_HSTR                2   // hstr: 0 - 7
-#define TMC2660_HEND                10   // hend: -3 - 12
+#define TMC2660_CHOPPER_MODE        0   // chm: 0 = spreadCycle, 1 = constant off time
+#define TMC2660_HSTR                4   // hstr: 0 - 7
+#define TMC2660_HEND                1   // hend: -3 - 12
 #define TMC2660_HDEC                0   // Hysteresis decrement: 0 16 clocks
 #define TMC2660_RNDTF               1  // Random off time
 
 //SGCSCONF
 #define TMC2660_CURRENT_SCALE       10   // current scale default (conservative)
-#define TMC2660_SG_THRESH           2   // Stallguard threshold -- this gets overwritten upon motor add by defaults from trinamic.h
+#define TMC2660_SG_THRESH           63   // Stallguard threshold
 #define TMC2660_SG_FILTER           1   // Enable Stallguard Filter -- this gets overwritten upon motor add by defaults from trinamic.h
 
 //DRVCONF
@@ -92,9 +92,9 @@ typedef enum {
 #define TMC2660_INTPOL              1          //step interpolation
 
 //SMARTEN
-#define TMC2660_SEMIN               1   // 0 = Coolstep disabled
-#define TMC2660_SEUP                3   // 0 - 3 (1 - 8)
-#define TMC2660_SEMAX               0   // 0 - 15
+#define TMC2660_SEMIN               0   // 0 = Coolstep disabled
+#define TMC2660_SEUP                0   // 0 - 3 (1 - 8)
+#define TMC2660_SEMAX               1   // 0 - 15
 #define TMC2660_SEDN                3   // 0 - 
 #define TMC2660_SEIMIN              0   // 0 = 1/2 of CS, 1 = 1/4 of CS
 

@@ -149,20 +149,20 @@ static void stallGuardEnable (uint8_t motor, float feed_rate, float steps_mm, in
     TMC2660_t *driver = tmcdriver[motor];
 
     //sg_tst pin is always enabled.
-    driver->sgcsconf.reg.sgt = sensitivity & 0x7F; // 7-bits signed value
+    //driver->sgcsconf.reg.sgt = sensitivity & 0x7F; // 7-bits signed value
     tmc2660_spi_write(tmcdriver[motor]->config.motor, (TMC2660_spi_datagram_t *)&driver->sgcsconf);
 }
 
 // stallguard filter
 static void sg_filter (uint8_t motor, bool val)
 {
-    tmcdriver[motor]->sgcsconf.reg.sfilt = val;
+    //tmcdriver[motor]->sgcsconf.reg.sfilt = val;
     tmc2660_spi_write(tmcdriver[motor]->config.motor, (TMC2660_spi_datagram_t *)&tmcdriver[motor]->sgcsconf);
 }
 
 static void sg_stall_value (uint8_t motor, int16_t val)
 {
-    tmcdriver[motor]->sgcsconf.reg.sgt = val & 0x7F; // 7-bits signed value
+    //tmcdriver[motor]->sgcsconf.reg.sgt = val & 0x7F; // 7-bits signed value
     tmc2660_spi_write(tmcdriver[motor]->config.motor, (TMC2660_spi_datagram_t *)&tmcdriver[motor]->sgcsconf);
 }
 
