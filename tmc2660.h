@@ -81,10 +81,10 @@ typedef enum {
 //SGCSCONF
 #define TMC2660_CURRENT_SCALE       10   // current scale default (conservative)
 #define TMC2660_SG_THRESH           63   // Stallguard threshold
-#define TMC2660_SG_FILTER           1   // Enable Stallguard Filter -- this gets overwritten upon motor add by defaults from trinamic.h
+#define TMC2660_SG_FILTER           1   // Enable Stallguard Filter
 
 //DRVCONF
-#define TMC2660_DRVCONF            0xA31F  //0xA33F extra debug//0xA31F   // DRVCONF Register defaults (likely don't need to change)  All protections enabled.
+#define TMC2660_DRVCONF            0xA31F  //0xA33F extra debug//0x031F older   // DRVCONF Register defaults (likely don't need to change)  All protections enabled.
 
 //DRVCTRL
 #define TMC2660_MRES                5           //default 8x microsteps
@@ -92,7 +92,7 @@ typedef enum {
 #define TMC2660_INTPOL              1          //step interpolation
 
 //SMARTEN
-#define TMC2660_SEMIN               0   // 0 = Coolstep disabled
+#define TMC2660_SEMIN               1   // 0 = Coolstep disabled
 #define TMC2660_SEUP                0   // 0 - 3 (1 - 8)
 #define TMC2660_SEMAX               1   // 0 - 15
 #define TMC2660_SEDN                3   // 0 - 
