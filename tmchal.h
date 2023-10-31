@@ -84,7 +84,6 @@ typedef union {
     };
 } TMC_drv_status_t;
 
-
 typedef struct {
     uint8_t semin;
     int8_t semax;
@@ -97,6 +96,23 @@ typedef struct {
     uint8_t tbl;
     uint8_t toff;
 } TMC_chopper_timing_t;
+
+typedef struct {
+    uint8_t toff;
+    uint8_t tbl;
+    uint8_t chm;
+    uint8_t hstr;
+    uint8_t hend;
+    uint8_t hdec;
+    uint8_t rndtf;
+    uint8_t thresh;
+    uint8_t semin;
+    uint8_t seup;
+    uint8_t semax;
+    uint8_t sedn;
+    uint8_t seimin;
+    uint32_t drvconf;
+} TMC2660_settings_t;
 
 typedef trinamic_config_t *(*tmc_get_config)(uint8_t motor);
 
@@ -133,10 +149,13 @@ typedef void (*tmc_chopper_timing)(uint8_t motor, TMC_chopper_timing_t timing);
 typedef bool (*tmc_read_register)(uint8_t motor, uint8_t addr, uint32_t *val);
 typedef bool (*tmc_write_register)(uint8_t motor, uint8_t addr, uint32_t val);
 typedef void *(*tmc_get_register_addr)(uint8_t motor, uint8_t addr);
+typedef void (*trinamic_update_settings)(uint8_t motor, TMC2660_settings_t* settings);
 
 typedef struct {
     const char *name;
     trinamic_driver_t driver;
+    
+    trinamic_update_settings update_settings; 
 
     tmc_get_config get_config;
 

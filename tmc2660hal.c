@@ -162,7 +162,7 @@ static void sg_filter (uint8_t motor, bool val)
 
 static void sg_stall_value (uint8_t motor, int16_t val)
 {
-    //tmcdriver[motor]->sgcsconf.reg.sgt = val & 0x7F; // 7-bits signed value
+    tmcdriver[motor]->sgcsconf.reg.sgt = val & 0x7F; // 7-bits signed value
     tmc2660_spi_write(tmcdriver[motor]->config.motor, (TMC2660_spi_datagram_t *)&tmcdriver[motor]->sgcsconf);
 }
 
@@ -175,9 +175,11 @@ static void coolconf (uint8_t motor, TMC_coolconf_t coolconf)
 {
     TMC2660_t *driver = tmcdriver[motor];
 
+     #if 0
     driver->smarten.reg.semin = coolconf.semin;
     driver->smarten.reg.semax = coolconf.semax;
     driver->smarten.reg.sedn = coolconf.sedn;
+    #endif
     tmc2660_spi_write(tmcdriver[motor]->config.motor, (TMC2660_spi_datagram_t *)&driver->smarten);    
 }
 
@@ -197,9 +199,53 @@ static void chopper_timing (uint8_t motor, TMC_chopper_timing_t timing)
     driver->chopconf.reg.hend = timing.hend + 3;
     driver->chopconf.reg.tbl = timing.tbl;
     driver->chopconf.reg.toff = timing.toff;
+    #endif
 
     tmc2660_spi_write(driver->config.motor, (TMC2660_spi_datagram_t *)&driver->chopconf);
-    #endif
+    
+}
+
+static void updateSettings (uint8_t motor, TMC2660_settings_t* settings)
+{
+    TMC2660_t *driver = tmcdriver[motor];
+
+    driver->chopconf.reg.toff = settings->toff;
+    driver->chopconf.reg.tbl = settings->tbl;
+    driver->chopconf.reg.chm = settings->chm;
+    driver->chopconf.reg.hstrt = settings->hstr;
+    driver->chopconf.reg.hend = settings->hend;
+    driver->chopconf.reg.hdec = settings->hdec;
+    driver->chopconf.reg.rndtf = settings->rndtf;
+
+    driver->sgcsconf.reg.sgt = settings->thresh;
+
+    driver->smarten.reg.semin = settings->semin;
+    driver->smarten.reg.seup = settings->seup;
+    driver->smarten.reg.semax = settings->semax;
+    driver->smarten.reg.sedn = settings->sedn;
+    driver->smarten.reg.seimin = settings->seimin;
+
+    driver->drvconf.reg.value = settings->drvconf;             
+    
+
+    //DRVCONF
+    tmc2660_spi_write(driver->config.motor, (TMC2660_spi_datagram_t *)&driver->drvconf);
+
+    //DRVCTRL
+    tmc2660_spi_write(driver->config.motor, (TMC2660_spi_datagram_t *)&driver->drvctrl);
+
+    //CHOPCONF
+    tmc2660_spi_write(driver->config.motor, (TMC2660_spi_datagram_t *)&driver->chopconf);
+
+    //SMARTEN  
+    tmc2660_spi_write(driver->config.motor, (TMC2660_spi_datagram_t *)&driver->smarten);
+
+    //SGCSCONF
+    tmc2660_spi_write(driver->config.motor, (TMC2660_spi_datagram_t *)&driver->sgcsconf);
+
+    TMC2660_SetMicrosteps(driver, (tmc2660_microsteps_t)driver->config.microsteps);
+    TMC2660_SetCurrent(driver, driver->config.current, driver->config.hold_current_pct);
+    
 }
 
 static bool vsense (uint8_t motor)
@@ -297,6 +343,7 @@ static const tmchal_t tmchal = {
     .name = "TMC2660",
     .get_config = getConfig,
 
+    .update_settings = updateSettings,
 
     .microsteps_isvalid = isValidMicrosteps,
     .set_microsteps = setMicrosteps,
