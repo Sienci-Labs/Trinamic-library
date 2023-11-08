@@ -71,10 +71,10 @@ typedef enum {
 
 // CHOPCONF
 #define TMC2660_CONSTANT_OFF_TIME   1   // toff: 1 - 15
-#define TMC2660_BLANK_TIME          2   // tbl: 0 = 16, 1 = 24, 2 = 36, 3 = 54 clocks
-#define TMC2660_CHOPPER_MODE        1   // chm: 0 = spreadCycle, 1 = constant off time
-#define TMC2660_HSTR                4   // hstr: 0 - 7
-#define TMC2660_HEND                1   // hend: -3 - 12
+#define TMC2660_BLANK_TIME          1   // tbl: 0 = 16, 1 = 24, 2 = 36, 3 = 54 clocks
+#define TMC2660_CHOPPER_MODE        0   // chm: 0 = spreadCycle, 1 = constant off time
+#define TMC2660_HSTR                2   // hstr: 0 - 7
+#define TMC2660_HEND                8   // hend: -3 - 12
 #define TMC2660_HDEC                0   // Hysteresis decrement: 0 16 clocks
 #define TMC2660_RNDTF               1  // Random off time
 
@@ -95,7 +95,7 @@ typedef enum {
 #define TMC2660_SEMIN               7   // 0 = Coolstep disabled
 #define TMC2660_SEUP                3   // 0 - 3 (1 - 8)
 #define TMC2660_SEMAX               0   // 0 - 15
-#define TMC2660_SEDN                3   // 0 - 
+#define TMC2660_SEDN                3   // 0 - 15
 #define TMC2660_SEIMIN              0   // 0 = 1/2 of CS, 1 = 1/4 of CS
 
 // end of default values
