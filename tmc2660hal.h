@@ -43,6 +43,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "tmc2660.h"
 
 const tmchal_t *TMC2660_AddMotor (motor_map_t motor, uint16_t current, uint8_t microsteps, uint8_t r_sense);
+const tmchal_t *TMC2660_AddNULLMotor (motor_map_t motor);
 
 //TMC2660_drvstatus_dgr_t TMC2660_getAlarmStatus (uint8_t motor);
 

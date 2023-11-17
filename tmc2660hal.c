@@ -382,6 +382,50 @@ static const tmchal_t tmchal = {
     .write_register = write_register
 };
 
+static const tmchal_t nullhal = {
+    .driver = NULLDRIVER,
+    .name = "null",
+    .get_config = NULL,
+
+    .update_settings = NULL,
+
+    .microsteps_isvalid = NULL,
+    .set_microsteps = NULL,
+    .set_current = NULL,
+    .get_current = NULL,
+    .get_chopconf = NULL,
+    .get_tstep = NULL, //not supported
+    .get_drv_status = NULL,
+    .get_drv_status_raw = NULL,
+    //.set_tcoolthrs = setTCoolThrs,
+    //.set_tcoolthrs_raw = setTCoolThrsRaw,
+    .set_thigh = NULL, //not suported
+    .set_thigh_raw = NULL, //not supported
+    .stallguard_enable = NULL,
+    .stealthchop_enable = NULL, //not supported
+    .coolstep_enable = NULL,
+    .get_sg_result = NULL,
+    .get_tpwmthrs = NULL,  //not supported
+    .get_tpwmthrs_raw = NULL,  //not supported
+    .set_tpwmthrs = NULL,  //not supported
+    .get_global_scaler = NULL, //not supported
+    .get_en_pwm_mode = NULL,  //not supported
+    .get_ihold_irun = NULL,
+
+    .stealthChop = NULL,  //not supported
+    .sg_filter = NULL,
+    .sg_stall_value = NULL,
+    .get_sg_stall_value = NULL,
+    .coolconf = NULL,
+    .vsense = NULL,
+    .pwm_scale = NULL, //not supported
+    .chopper_timing = NULL,
+
+    .get_register_addr = NULL,
+    .read_register = NULL,  //not really supported, just returns the status register
+    .write_register = NULL
+};
+
 const tmchal_t *TMC2660_AddMotor (motor_map_t motor, uint16_t current, uint8_t microsteps, uint8_t r_sense)
 {
     bool ok = !!tmcdriver[motor.id];
@@ -401,4 +445,14 @@ const tmchal_t *TMC2660_AddMotor (motor_map_t motor, uint16_t current, uint8_t m
     }
 
     return ok ? &tmchal : NULL;
+}
+
+const tmchal_t *TMC2660_AddNullMotor (motor_map_t motor)
+{
+    bool ok = !!tmcdriver[motor.id];
+
+    if(ok || (ok = (tmcdriver[motor.id] = malloc(sizeof(TMC2660_t))) != NULL)) {
+    }
+
+    return ok ? &nullhal : NULL;
 }

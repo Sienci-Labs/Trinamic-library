@@ -49,7 +49,8 @@ typedef enum {
     TMC2209 = 0,
     TMC2130,
     TMC5160,
-    TMC2660
+    TMC2660,
+    NULLDRIVER
 } trinamic_driver_t;
 
 typedef enum {
