@@ -59,6 +59,7 @@ static bool isValidMicrosteps (uint8_t motor, uint16_t msteps)
 static void setMicrosteps (uint8_t motor, uint16_t msteps)
 {
    TMC2660_SetMicrosteps(tmcdriver[motor], (tmc2660_microsteps_t)msteps);
+   tmcdriver[motor]->config.microsteps = (tmc2660_microsteps_t)msteps;
 }
 
 static void setCurrent (uint8_t motor, uint16_t mA, uint8_t hold_pct)
