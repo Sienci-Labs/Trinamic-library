@@ -119,13 +119,13 @@ static TMC_drv_status_t getDriverStatus (uint8_t motor)
     return drv_status;
 }
 
-TMC2660_drvstatus_dgr_t TMC2660_getAlarmStatus (uint8_t motor)
+/*TMC2660_drvstatus_dgr_t TMC2660_getAlarmStatus (uint8_t motor)
 {
     //tmc2660_spi_read(tmcdriver[motor]->config.motor, (TMC2660_spi_datagram_t *)&tmcdriver[motor]->drvstatus);
 
     //return tmcdriver[motor]->drvstatus.reg;
     //return tmcdriver[motor]->drvstatus.reg.stst<<7 | tmcdriver[motor]->drvstatus.reg.olb<<6 | tmcdriver[motor]->drvstatus.reg.ola<<5 | tmcdriver[motor]->drvstatus.reg.shortb<<4 | tmcdriver[motor]->drvstatus.reg.shorta<<3 | tmcdriver[motor]->drvstatus.reg.otpw<<2 | tmcdriver[motor]->drvstatus.reg.ot<<1 | tmcdriver[motor]->drvstatus.reg.sg;
-}
+}*/
 
 static TMC_ihold_irun_t getIholdIrun (uint8_t motor)
 {
@@ -448,7 +448,7 @@ const tmchal_t *TMC2660_AddMotor (motor_map_t motor, uint16_t current, uint8_t m
     return ok ? &tmchal : NULL;
 }
 
-const tmchal_t *TMC2660_AddNullMotor (motor_map_t motor)
+const tmchal_t *TMC2660_AddNULLMotor (motor_map_t motor)
 {
     bool ok = !!tmcdriver[motor.id];
 
