@@ -86,7 +86,11 @@ typedef enum {
 #define TMC2660_F_CLK               15000000UL  // factory tuned to 12MHz - see datasheet for calibration procedure if required
 #define TMC2660_MODE                1           // 0 = TMCMode_StealthChop - not supported on 2660, 1 = TMCMode_CoolStep, 3 = TMCMode_StallGuard
 #define TMC2660_MICROSTEPS          TMC2660_Microsteps_8 // Default 8x microsteps -- this gets overwritten upon motor add by defaults from trinamic.h
+#ifdef SLB_ORANGE_BOARD
+#define TMC2660_R_SENSE             100
+#else
 #define TMC2660_R_SENSE             50          // mOhm -- this gets overwritten upon motor add by defaults from trinamic.h
+#endif
 #define TMC2660_CURRENT             500         // mA RMS -- this gets overwritten upon motor add by defaults from trinamic.h
 #define TMC2660_HOLD_CURRENT_PCT    50  //holding current percent -- this gets overwritten upon motor add by defaults from trinamic.h
 
