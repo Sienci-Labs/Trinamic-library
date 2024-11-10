@@ -1,12 +1,12 @@
 /*
  * tmchal.h - HAL interface for Trinamic stepper drivers
  *
- * v0.0.5 / 2022-12-20 / (c) Io Engineering / Terje
+ * v0.0.7 / 2024-09-28
  */
 
 /*
 
-Copyright (c) 2021-2022, Terje Io
+Copyright (c) 2021-2024, Terje Io
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -119,7 +119,7 @@ typedef trinamic_config_t *(*tmc_get_config)(uint8_t motor);
 typedef bool (*tmc_microsteps_isvalid)(uint8_t motor, uint16_t microsteps);
 typedef void (*tmc_set_microsteps)(uint8_t motor, uint16_t microsteps);
 typedef void (*tmc_set_current)(uint8_t motor, uint16_t mA, uint8_t hold_pct);
-typedef uint16_t (*tmc_get_current)(uint8_t motor);
+typedef uint16_t (*tmc_get_current)(uint8_t motor, trinamic_current_t type);
 typedef TMC_chopconf_t (*tmc_get_chopconf)(uint8_t motor);
 typedef uint32_t (*tmc_get_tstep)(uint8_t motor);
 typedef TMC_drv_status_t (*tmc_get_drv_status)(uint8_t motor);
@@ -144,8 +144,8 @@ typedef void (*tmc_sg_stall_value)(uint8_t motor, int16_t val);
 typedef int16_t (*tmc_get_sg_stall_value)(uint8_t motor);
 typedef uint8_t (*tmc_pwm_scale)(uint8_t motor);
 typedef bool (*tmc_vsense)(uint8_t motor);
-typedef void (*tmc_coolconf)(uint8_t motor, TMC_coolconf_t coolconf);
-typedef void (*tmc_chopper_timing)(uint8_t motor, TMC_chopper_timing_t timing);
+typedef void (*tmc_coolconf)(uint8_t motor, trinamic_coolconf_t coolconf);
+typedef void (*tmc_chopper_timing)(uint8_t motor, trinamic_chopconf_t timing);
 typedef bool (*tmc_read_register)(uint8_t motor, uint8_t addr, uint32_t *val);
 typedef bool (*tmc_write_register)(uint8_t motor, uint8_t addr, uint32_t val);
 typedef void *(*tmc_get_register_addr)(uint8_t motor, uint8_t addr);
@@ -164,33 +164,41 @@ typedef struct {
     tmc_set_current set_current;
     tmc_get_current get_current;
     tmc_get_chopconf get_chopconf;
-    tmc_get_tstep get_tstep;
     tmc_get_drv_status get_drv_status;
     tmc_get_drv_status_raw get_drv_status_raw;
+    tmc_stallguard_enable stallguard_enable;
+    tmc_coolstep_enable coolstep_enable;
+    tmc_get_ihold_irun get_ihold_irun;
+
+// The following functions are dependent on driver support and may be NULL
+    tmc_get_global_scaler get_global_scaler;
+    tmc_get_tstep get_tstep;
     tmc_set_tcoolthrs set_tcoolthrs;
-    tmc_set_tcoolthrs_raw set_tcoolthrs_raw;
     tmc_set_thigh set_thigh;
+    tmc_set_tcoolthrs_raw set_tcoolthrs_raw;
     tmc_set_thigh_raw set_thigh_raw;
     tmc_get_sg_result get_sg_result;
-    tmc_stallguard_enable stallguard_enable;
     tmc_stealthchop_enable stealthchop_enable;
-    tmc_coolstep_enable coolstep_enable;
     tmc_get_tpwmthrs_raw get_tpwmthrs_raw;
     tmc_get_tpwmthrs get_tpwmthrs;
     tmc_set_tpwmthrs set_tpwmthrs;
-    tmc_get_global_scaler get_global_scaler;
     tmc_get_en_pwm_mode get_en_pwm_mode;
-    tmc_get_ihold_irun get_ihold_irun;
-
     tmc_stealthChop stealthChop;
+    tmc_pwm_scale pwm_scale;
+// end of dependent fuctions
+
     tmc_sg_filter sg_filter;
     tmc_sg_stall_value sg_stall_value;
     tmc_get_sg_stall_value get_sg_stall_value;
     tmc_vsense vsense;
     tmc_coolconf coolconf;
-    tmc_pwm_scale pwm_scale;
     tmc_chopper_timing chopper_timing;
     tmc_get_register_addr get_register_addr;
     tmc_read_register read_register;
     tmc_write_register write_register;
 } tmchal_t;
+
+static const tmchal_t tmc_null_driver = {
+    .driver = TMCNULL,
+    .name = "null",
+};

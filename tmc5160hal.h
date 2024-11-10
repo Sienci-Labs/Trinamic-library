@@ -1,12 +1,12 @@
 /*
  * tmc5160hal.h - interface for Trinamic TMC5160 stepper driver
  *
- * v0.0.2 / 2021-08-05 / (c) Io Engineering / Terje
+ * v0.0.4 / 2024-04-15
  */
 
 /*
 
-Copyright (c) 2021, Terje Io
+Copyright (c) 2021-2024, Terje Io
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -39,6 +39,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef _TMC5160HAL_H_
 #define _TMC5160HAL_H_
 
+#include "tmc5160.h"
 #include "tmchal.h"
 
 const tmchal_t *TMC5160_AddMotor (motor_map_t motor, uint16_t current, uint8_t microsteps, uint8_t r_sense);

@@ -1,12 +1,12 @@
 /*
  * tmc2209.c - interface for Trinamic TMC2209 stepper driver
  *
- * v0.0.5 / 2022-08-24 / (c) Io Engineering / Terje
+ * v0.0.8 / 2024-11-07
  */
 
 /*
 
-Copyright (c) 2020-2022, Terje Io
+Copyright (c) 2020-2024, Terje Io
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -42,10 +42,42 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
 
+#include <math.h>
 #include <string.h>
 
 #include "tmc2209.h"
 
+static const trinamic_cfg_params_t cfg_params = {
+
+    .cap.drvconf = 0,
+
+    .cap.coolconf.seup = 0b11,
+    .cap.coolconf.sedn = 0b11,
+    .cap.coolconf.semax = 0b1111,
+    .cap.coolconf.semin = 0b1111,
+    .cap.coolconf.seimin = 1,
+
+    .cap.chopconf.toff = 0b1111,
+    .cap.chopconf.hstrt = 0b111,
+    .cap.chopconf.hend = 0b1111,
+    .cap.chopconf.rndtf = 1,
+    .cap.chopconf.intpol = 1,
+    .cap.chopconf.tbl = 0b11,
+
+    .dflt.drvconf = 0,
+
+    .dflt.coolconf.seup = TMC2209_SEUP,
+    .dflt.coolconf.sedn = TMC2209_SEDN,
+    .dflt.coolconf.semax = TMC2209_SEMAX,
+    .dflt.coolconf.semin = TMC2209_SEMIN,
+    .dflt.coolconf.seimin = TMC2209_SEIMIN,
+
+    .dflt.chopconf.toff = TMC2209_TOFF,
+    .dflt.chopconf.hstrt = TMC2209_HSTRT - 1,
+    .dflt.chopconf.hend = TMC2209_HEND + 3,
+    .dflt.chopconf.intpol = TMC2209_INTPOL,
+    .dflt.chopconf.tbl = TMC2209_TBL
+};
 
 static const TMC2209_t tmc2209_defaults = {
     .config.f_clk = TMC2209_F_CLK,
@@ -107,7 +139,7 @@ static void _set_rms_current (TMC2209_t *driver)
 {
     float maxv = (((float)(driver->config.r_sense + 20)) * (float)(32UL * driver->config.current)) * 1.41421f / 1000.0f;
 
-    uint8_t current_scaling = (uint8_t)(maxv / 325.0f) - 1;
+    int8_t current_scaling = (int8_t)(maxv / 325.0f) - 1;
 
     // If the current scaling is too low set the vsense bit and recalculate the current setting
     if ((driver->chopconf.reg.vsense = (current_scaling < 16)))
@@ -117,6 +149,11 @@ static void _set_rms_current (TMC2209_t *driver)
     driver->ihold_irun.reg.ihold = (driver->ihold_irun.reg.irun * driver->config.hold_current_pct) / 100;
 
 //?    driver->coolconf.reg.seimin = driver->ihold_irun.reg.irun >= 20;
+}
+
+const trinamic_cfg_params_t *TMC2209_GetConfigDefaults (void)
+{
+    return &cfg_params;
 }
 
 void TMC2209_SetDefaults (TMC2209_t *driver)
@@ -165,9 +202,31 @@ bool TMC2209_Init (TMC2209_t *driver)
     return (((uint8_t)driver->ifcnt.reg.count - ifcnt) & 0xFF) == 7;
 }
 
-uint16_t TMC2209_GetCurrent (TMC2209_t *driver)
+uint16_t TMC2209_GetCurrent (TMC2209_t *driver, trinamic_current_t type)
 {
-    return (uint16_t)((float)(driver->ihold_irun.reg.irun + 1) / 32.0f * (driver->chopconf.reg.vsense ? 180.0f : 325.0f) / (float)(driver->config.r_sense + 20) / 1.41421f * 1000.0f);
+    uint8_t cs;
+    bool vsense;
+
+    switch(type) {
+        case TMCCurrent_Max:
+            cs = 31;
+            vsense = 0;
+            break;
+        case TMCCurrent_Actual:
+            cs = driver->ihold_irun.reg.irun;
+            vsense = driver->chopconf.reg.vsense;
+            break;
+        case TMCCurrent_Hold:
+            cs = driver->ihold_irun.reg.ihold;
+            vsense = driver->chopconf.reg.vsense;
+            break;
+        default: // TMCCurrent_Min:
+            cs = 0;
+            vsense = 1;
+            break;
+    }
+
+    return (uint16_t)ceilf((float)(cs + 1) / 32.0f * (vsense ? 180.0f : 325.0f) / (float)(driver->config.r_sense + 20) / 1.41421f * 1000.0f);
 }
 
 // r_sense = mOhm, Vsense = mV, current = mA (RMS)
@@ -287,7 +346,6 @@ bool TMC2209_WriteRegister (TMC2209_t *driver, TMC2209_datagram_t *reg)
 
     return true;
 }
-
 
 bool TMC2209_ReadRegister (TMC2209_t *driver, TMC2209_datagram_t *reg)
 {

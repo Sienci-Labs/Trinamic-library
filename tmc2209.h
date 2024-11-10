@@ -1,12 +1,12 @@
 /*
  * tmc2209.h - register and message (datagram) descriptors for Trinamic TMC2209 stepper driver
  *
- * v0.0.4 / 2021-12-12 / (c) Io Engineering / Terje
+ * v0.0.7 / 2024-09-28
  */
 
 /*
 
-Copyright (c) 2020-2021, Terje Io
+Copyright (c) 2020-2024, Terje Io
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -61,19 +61,20 @@ typedef enum {
 // default values
 
 // General
-#define TMC2209_F_CLK               12000000UL  // factory tuned to 12MHz - see datasheet for calibration procedure if required
-#define TMC2209_MODE                0           // 0 = TMCMode_StealthChop, 1 = TMCMode_CoolStep, 3 = TMCMode_StallGuard
+#define TMC2209_F_CLK               12000000UL              // factory tuned to 12MHz - see datasheet for calibration procedure if required
+#define TMC2209_MODE                TMCMode_StealthChop     // 0 = TMCMode_StealthChop, 1 = TMCMode_CoolStep, 3 = TMCMode_StallGuard
 #define TMC2209_MICROSTEPS          TMC2209_Microsteps_4
-#define TMC2209_R_SENSE             110         // mOhm
-#define TMC2209_CURRENT             500         // mA RMS
+#define TMC2209_R_SENSE             110                     // mOhm
+#define TMC2209_CURRENT             500                     // mA RMS
 #define TMC2209_HOLD_CURRENT_PCT    50
 
 // CHOPCONF
-#define TMC2209_INTPOL              1   // 0 = off, 1 = on
-#define TMC2209_TOFF                3   // 1 - 15
-#define TMC2209_TBL                 0   // 0 = 16, 1 = 24, 2 = 36, 3 = 54 clocks
-#define TMC2209_HSTRT               6   // hstrt: 0 - 7
-#define TMC2209_HEND               -3   // hend: -3 - 12
+#define TMC2209_INTPOL              1   // Step interpolation: 0 = off, 1 = on
+#define TMC2209_TOFF                3   // Off time: 1 - 15, 0 = MOSFET disable
+#define TMC2209_TBL                 0   // Blanking time: 0 = 16, 1 = 24, 2 = 36, 3 = 54 clocks
+#define TMC2209_HSTRT               1   // Hysteresis start: 1 - 8
+#define TMC2209_HEND               -1   // Hysteresis end: -3 - 12
+#define TMC2209_HMAX               16   // HSTRT + HEND
 
 #define TMC2209_IHOLDDELAY  10 // 0 - 15
 
@@ -714,8 +715,9 @@ typedef struct {
 
 bool TMC2209_Init(TMC2209_t *driver);
 void TMC2209_SetDefaults (TMC2209_t *driver);
+const trinamic_cfg_params_t *TMC2209_GetConfigDefaults (void);
 void TMC2209_SetCurrent (TMC2209_t *driver, uint16_t mA, uint8_t hold_pct);
-uint16_t TMC2209_GetCurrent (TMC2209_t *driver);
+uint16_t TMC2209_GetCurrent (TMC2209_t *driver, trinamic_current_t type);
 float TMC2209_GetTPWMTHRS (TMC2209_t *driver, float steps_mm);
 void TMC2209_SetTPWMTHRS (TMC2209_t *driver, float mm_sec, float steps_mm);
 bool TMC2209_MicrostepsIsValid (uint16_t usteps);

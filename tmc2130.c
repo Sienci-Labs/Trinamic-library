@@ -1,12 +1,12 @@
 /*
  * tmc2130.c - interface for Trinamic TMC2130 stepper driver
  *
- * v0.0.7 / 2021-10-17 / (c) Io Engineering / Terje
+ * v0.0.10 / 2024-11-07
  */
 
 /*
 
-Copyright (c) 2018-2021, Terje Io
+Copyright (c) 2018-2024, Terje Io
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -42,9 +42,43 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
 
+#include <math.h>
 #include <string.h>
 
 #include "tmc2130.h"
+
+static const trinamic_cfg_params_t cfg_params = {
+
+    .cap.drvconf = 0,
+
+    .cap.coolconf.seup = 0b11,
+    .cap.coolconf.sedn = 0b11,
+    .cap.coolconf.semax = 0b1111,
+    .cap.coolconf.semin = 0b1111,
+    .cap.coolconf.seimin = 1,
+
+    .cap.chopconf.toff = 0b1111,
+    .cap.chopconf.hstrt = 0b111,
+    .cap.chopconf.hend = 0b1111,
+    .cap.chopconf.rndtf = 1,
+    .cap.chopconf.chm = 1,
+    .cap.chopconf.tbl = 0b11,
+
+    .dflt.drvconf = 0,
+
+    .dflt.coolconf.seup = TMC2130_SEUP,
+    .dflt.coolconf.sedn = TMC2130_SEDN,
+    .dflt.coolconf.semax = TMC2130_SEMAX,
+    .dflt.coolconf.semin = TMC2130_SEMIN,
+    .dflt.coolconf.seimin = TMC2130_SEIMIN,
+
+    .dflt.chopconf.toff = TMC2130_TOFF,
+    .dflt.chopconf.hstrt = TMC2130_HSTRT - 1,
+    .dflt.chopconf.hend = TMC2130_HEND + 3,
+    .dflt.chopconf.rndtf = TMC2130_RNDTF,
+    .dflt.chopconf.chm = TMC2130_CHM,
+    .dflt.chopconf.tbl = TMC2130_TBL
+};
 
 static const TMC2130_t tmc2130_defaults = {
     .config.f_clk = TMC2130_F_CLK,
@@ -75,11 +109,11 @@ static const TMC2130_t tmc2130_defaults = {
     .chopconf.addr.reg = TMC2130Reg_CHOPCONF,
     .chopconf.reg.intpol = TMC2130_INTPOL,
     .chopconf.reg.toff = TMC2130_TOFF,
-    .chopconf.reg.chm = TMC2130_CHOPPER_MODE,
+    .chopconf.reg.chm = TMC2130_CHM,
     .chopconf.reg.tbl = TMC2130_TBL,
     .chopconf.reg.rndtf = TMC2130_RNDTF,
     .chopconf.reg.hend = TMC2130_HEND + 3,
-#if TMC2130_CHOPPER_MODE == 0
+#if TMC2130_CHM == 0
     .chopconf.reg.hstrt = TMC2130_HSTRT - 1,
 #else
     .chopconf.reg.fd3 = (TMC2130_TFD & 0x08) >> 3,
@@ -117,15 +151,20 @@ static const TMC2130_t tmc2130_defaults = {
 
 };
 
+const trinamic_cfg_params_t *TMC2130_GetConfigDefaults (void)
+{
+    return &cfg_params;
+}
+
 static void _set_rms_current (TMC2130_t *driver)
 {
     float maxv = (((float)(driver->config.r_sense + 20)) * (float)(32UL * driver->config.current)) * 1.41421f / 1000.0f;
 
-    uint8_t current_scaling = (uint8_t)(maxv / 325.0f) - 1;
+    int8_t current_scaling = (int8_t)(maxv / 325.0f) - 1;
 
     // If the current scaling is too low set the vsense bit and recalculate the current setting
     if ((driver->chopconf.reg.vsense = (current_scaling < 16)))
-        current_scaling = (uint8_t)(maxv / 180.0f) - 1;
+        current_scaling = (int8_t)(maxv / 180.0f) - 1;
 
     driver->ihold_irun.reg.irun = current_scaling > 31 ? 31 : current_scaling;
     driver->ihold_irun.reg.ihold = (driver->ihold_irun.reg.irun * driver->config.hold_current_pct) / 100;
@@ -167,9 +206,31 @@ bool TMC2130_Init (TMC2130_t *driver)
     return driver->chopconf.reg.value == chopconf;
 }
 
-uint16_t TMC2130_GetCurrent (TMC2130_t *driver)
+uint16_t TMC2130_GetCurrent (TMC2130_t *driver, trinamic_current_t type)
 {
-    return (uint16_t)((float)(driver->ihold_irun.reg.irun + 1) / 32.0f * (driver->chopconf.reg.vsense ? 180.0f : 325.0f) / (float)(driver->config.r_sense + 20) / 1.41421f * 1000.0f);
+    uint8_t cs;
+    bool vsense;
+
+    switch(type) {
+        case TMCCurrent_Max:
+            cs = 31;
+            vsense = 0;
+            break;
+        case TMCCurrent_Actual:
+            cs = driver->ihold_irun.reg.irun;
+            vsense = driver->chopconf.reg.vsense;
+            break;
+        case TMCCurrent_Hold:
+            cs = driver->ihold_irun.reg.ihold;
+            vsense = driver->chopconf.reg.vsense;
+            break;
+        default: // TMCCurrent_Min:
+            cs = 0;
+            vsense = 1;
+            break;
+    }
+
+    return (uint16_t)ceilf((float)(cs + 1) / 32.0f * (vsense ? 180.0f : 325.0f) / (float)(driver->config.r_sense + 20) / 1.41421f * 1000.0f);
 }
 
 // r_sense = mOhm, Vsense = mV, current = mA (RMS)
